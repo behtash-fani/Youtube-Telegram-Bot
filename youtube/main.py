@@ -17,6 +17,7 @@ if not API_TOKEN:
 bot = Bot(API_TOKEN)
 dp = Dispatcher(bot)
 
+#l;sdlskjfd
 
 @dp.message_handler(commands=['start'])
 async def cmd_start(message: types.Message):
