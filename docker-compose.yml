@@ -1,0 +1,15 @@
+version: '3.8'
+
+services:
+  pandadlbot:
+    build:
+      context: .
+    volumes:
+      - .:/app
+    working_dir: /app/youtube
+    command: python main.py
+    environment:
+      - API_TOKEN=${API_TOKEN}
+    ports:
+      - "8000:8000"
+    restart: always
