@@ -5,6 +5,7 @@ from yt_dl import get_video_details, is_valid_youtube_url, download_video
 from bucket_tool import bucket
 import os
 from dotenv import load_dotenv
+from database import Database
 
 load_dotenv()
 
@@ -16,9 +17,13 @@ if not API_TOKEN:
 
 bot = Bot(API_TOKEN)
 dp = Dispatcher(bot)
+db = Database("bot_database.db")
 
 @dp.message_handler(commands=['start'])
 async def cmd_start(message: types.Message):
+    user_id = message.from_user.id
+    db.add_user(user_id)
+    
     await message.answer_sticker("CAACAgIAAxkBAAEMNRRmVHYlX3AeIP2klFDB-7Q_bDzvJwACCgADJHFiGtSUmaRviPBGNQQ")
     await message.answer("سلام به پاندا دی ال خوش اومدی")
     await message.answer("اینجا من ازت یک لینک یوتوب میگیرم و ویدیو اون لینک رو یه جا آپلود میکنم و بهت لینک بدون فیلتر میدم")
@@ -27,9 +32,11 @@ async def cmd_start(message: types.Message):
 
 @dp.message_handler()
 async def get_youtube_link(message: types.Message):
+    user_id = message.from_user.id
     url_is_valid = is_valid_youtube_url(message.text)
     video_url = message.text
     if url_is_valid:
+        db.add_youtube_link(user_id, video_url)
         await message.answer("آفرین این همون لینک درسته که منظورم بود 👌🏻")
         await message.answer("حالا لطفا چند لحظه صبر کن اطلاعاتشو بهت بدم")
         video_details = get_video_details(message.text)
@@ -61,12 +68,14 @@ async def download_video_callback(callback_query: types.CallbackQuery):
     download_result = download_video(video_url, format_id, user_id)
     if download_result['status'] == 'success':
         file_size = bucket.get_object_detail(download_result['file_name'])
+        db.update_link_status(video_url, 'success')
         await callback_query.message.answer(
             f"بفرما دیدی چقدر آسون و سریع آماده شد. لذت ببر\nاندازه فایل: {file_size}\nلینک دانلود: \n{download_result['file_url']}\n راستی این لینک رو میتونیم تا ۱ ساعت برات نگه داریم بعد پاک میشه "
             )
         await callback_query.message.answer("حالا که خودت کیف کردی از سرعت ربات، ما رو هم به بقیه معرفی کن بقیه هم استفاده کنند \n @pandadl_youtube_bot")
         await callback_query.message.answer_sticker("CAACAgIAAxkBAAEMNSFmVH2EBvyPvxadOMIK7AuPgcIdpgACEQADJHFiGg4fi9EJ5yBPNQQ")
     else:
+        db.update_link_status(video_url, 'fail')
         await callback_query.message.answer("ای وای شرمنده یه مشکلی پیش اومده. حتما حلش میکنیم گریه نکنیا الان درستش میکنیم ")
         await callback_query.message.answer_sticker("CAACAgIAAxkBAAEMNSNmVH3HK8IM8ZO0akF2FdirwHnP-wACEAADJHFiGpr6FCbQRHAxNQQ")
 
