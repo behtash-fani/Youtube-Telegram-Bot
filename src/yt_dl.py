@@ -1,5 +1,6 @@
 import yt_dlp
 import re
+import os
 from bucket_tool import bucket
 
 def is_valid_youtube_url(video_url):
@@ -69,22 +70,29 @@ def get_video_details(video_url):
 def download_video(video_url, format_id, user_id):
     video_details = get_video_details(video_url)
     video_id = video_details['video_id']
+    
+    # Define the download path
+    download_path = f'downloads/{user_id}'
+    if not os.path.exists(download_path):
+        os.makedirs(download_path)
 
+    # New filename format including the user ID
     file_name = f'{user_id}_{video_id}.mp4'
+    full_file_path = os.path.join(download_path, file_name)
+    
     ydl_opts = {
         'format': f'{format_id}+bestaudio/best',
-        'outtmpl': file_name,
+        'outtmpl': full_file_path,
         'noplaylist': True,
         'quiet': False,
         'merge_output_format': 'mp4'  # Ensure merging to mp4
     }
-
+    
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         ydl.download([video_url])
 
     bucket_name = 'pandadl-media'
-    object_name = file_name
-    success = bucket.upload_file(file_name, bucket_name, object_name)
+    success = bucket.upload_file(full_file_path, bucket_name, file_name)
 
     if success:
         print("File uploaded successfully")

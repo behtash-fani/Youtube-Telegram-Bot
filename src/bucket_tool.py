@@ -2,6 +2,8 @@ import boto3
 from botocore.client import Config
 from botocore.exceptions import NoCredentialsError
 import os
+from datetime import datetime, timedelta
+
 
 class Bucket:
     def __init__(self):
@@ -75,4 +77,24 @@ class Bucket:
         except Exception as e:
             print(f"Error occurred while trying to remove the file: {e}")
 
+    def delete_files(self):
+        try:
+            response = self.conn.list_objects_v2(Bucket="pandadl-media")
+            if 'Contents' in response:
+                for obj in response['Contents']:
+                    file_name = obj['Key']
+                    last_modified = obj['LastModified']
+                    current_time = datetime.now(last_modified.tzinfo)
+                    if (current_time - last_modified).total_seconds() >= 3600:
+                        self.conn.delete_object(Bucket="pandadl-media", Key=file_name)
+                        print(f"File {file_name} has expired and been deleted.")
+            else:
+                print("No files found.")
+        except NoCredentialsError:
+            print("Credentials not available")
+        except Exception as e:
+            print(f"An error occurred while deleting files: {e}")
+
 bucket = Bucket()
+bucket.delete_files()
+    

@@ -17,8 +17,6 @@ if not API_TOKEN:
 bot = Bot(API_TOKEN)
 dp = Dispatcher(bot)
 
-#l;sdlskjfd
-
 @dp.message_handler(commands=['start'])
 async def cmd_start(message: types.Message):
     await message.answer_sticker("CAACAgIAAxkBAAEMNRRmVHYlX3AeIP2klFDB-7Q_bDzvJwACCgADJHFiGtSUmaRviPBGNQQ")
@@ -64,9 +62,9 @@ async def download_video_callback(callback_query: types.CallbackQuery):
     if download_result['status'] == 'success':
         file_size = bucket.get_object_detail(download_result['file_name'])
         await callback_query.message.answer(
-            f"بفرما دیدی چقدر آسون و سریع آماده شد. لذت ببر\nاندازه فایل: {file_size}\nلینک دانلود: \n{download_result['file_url']}\n راستی این لینک رو میتونیم تا ۲۴ ساعت برات نگه داریم بعد پاک میشه "
+            f"بفرما دیدی چقدر آسون و سریع آماده شد. لذت ببر\nاندازه فایل: {file_size}\nلینک دانلود: \n{download_result['file_url']}\n راستی این لینک رو میتونیم تا ۱ ساعت برات نگه داریم بعد پاک میشه "
             )
-        await callback_query.message.answer("حالا که خودت کیف کردی از سرعت ربات، ما رو هم به بقیه معرفی کن بقیه هم استفاده کنند \n @pandadlBot")
+        await callback_query.message.answer("حالا که خودت کیف کردی از سرعت ربات، ما رو هم به بقیه معرفی کن بقیه هم استفاده کنند \n @pandadl_youtube_bot")
         await callback_query.message.answer_sticker("CAACAgIAAxkBAAEMNSFmVH2EBvyPvxadOMIK7AuPgcIdpgACEQADJHFiGg4fi9EJ5yBPNQQ")
     else:
         await callback_query.message.answer("ای وای شرمنده یه مشکلی پیش اومده. حتما حلش میکنیم گریه نکنیا الان درستش میکنیم ")

@@ -1,0 +1,30 @@
+# Use an official Python runtime as a parent image
+FROM python:3.9-slim
+
+# Set the working directory to /app
+WORKDIR /app
+
+# Copy the requirements file and install dependencies
+COPY requirements.txt requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Install cron
+RUN apt-get update && apt-get install -y cron
+
+# Copy the script to generate crontab file
+COPY generate_crontab.sh /app/generate_crontab.sh
+
+# Give execution rights to the script
+RUN chmod +x /app/generate_crontab.sh
+
+# Run the script to generate the crontab file
+RUN /app/generate_crontab.sh
+
+# Debug: Verify the contents of the crontab file
+RUN cat /etc/cron.d/delete_files_cron
+
+# Create the log file to be able to run tail
+RUN touch /var/log/cron.log
+
+# Run the command on container startup
+CMD ["cron", "-f"]
