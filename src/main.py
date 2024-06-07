@@ -73,8 +73,6 @@ async def get_youtube_link(message: types.Message):
         await message.answer("لطفا یه لینک درست یوتوب ( من دوست دارم یوتوب صداش کنم 😁 ) ارسال کن")
 
 
-import logging
-
 @dp.callback_query_handler()
 async def download_video_callback(callback_query: types.CallbackQuery):
     await bot.answer_callback_query(callback_query.id)
@@ -91,7 +89,8 @@ async def download_video_callback(callback_query: types.CallbackQuery):
         else:
             type = 'video'
             await callback_query.message.answer("فایل ویدیویی داره میپزه نه چیز داره دانلود میشه 😄")
-        download_result = download_video(video_url, format_id, resolution, user_id, type)
+        download_result = download_video(
+            video_url, format_id, resolution, user_id, type)
         if download_result['status'] == 'success':
             file_size = bucket.get_object_detail(download_result['file_name'])
             db.update_link_status(video_url, 'success')
