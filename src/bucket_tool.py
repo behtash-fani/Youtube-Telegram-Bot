@@ -3,7 +3,7 @@ from botocore.client import Config
 from botocore.exceptions import NoCredentialsError
 import os
 from datetime import datetime, timedelta
-
+import logging
 
 class Bucket:
     def __init__(self):
@@ -36,7 +36,7 @@ class Bucket:
                         objects_with_sizes[file_name] = self.format_filesize(file_size)
                 return objects_with_sizes
         except NoCredentialsError:
-            print("Credentials not available")
+            logging.error("Credentials not available")
             return {}
 
     def format_filesize(self, filesize):
@@ -55,27 +55,32 @@ class Bucket:
         if object_name is None:
             object_name = file_name
         try:
+            if not os.path.exists(file_name):
+                logging.error(f"File {file_name} does not exist")
+                return False
+
             self.conn.upload_file(
                 file_name, bucket_name, object_name,
                 ExtraArgs={'ACL': 'public-read'}
             )
             self.remove_local_file(file_name)
         except NoCredentialsError:
-            print("Credentials not available")
+            logging.error("Credentials not available")
             return False
         except Exception as e:
-            print(f"An error occurred: {e}")
+            logging.error(f"An error occurred: {e}")
             return False
+        logging.info(f"File {file_name} uploaded successfully")
         return True
 
     def remove_local_file(self, file_path):
         try:
             os.remove(file_path)
-            print(f"File {file_path} has been removed successfully.")
+            logging.info(f"File {file_path} has been removed successfully.")
         except FileNotFoundError:
-            print(f"File {file_path} not found.")
+            logging.error(f"File {file_path} not found.")
         except Exception as e:
-            print(f"Error occurred while trying to remove the file: {e}")
+            logging.error(f"Error occurred while trying to remove the file: {e}")
 
     def delete_files(self):
         try:
@@ -87,14 +92,13 @@ class Bucket:
                     current_time = datetime.now(last_modified.tzinfo)
                     if (current_time - last_modified).total_seconds() >= 3600:
                         self.conn.delete_object(Bucket="pandadl-media", Key=file_name)
-                        print(f"File {file_name} has expired and been deleted.")
+                        logging.info(f"File {file_name} has expired and been deleted.")
             else:
-                print("No files found.")
+                logging.info("No files found.")
         except NoCredentialsError:
-            print("Credentials not available")
+            logging.error("Credentials not available")
         except Exception as e:
-            print(f"An error occurred while deleting files: {e}")
+            logging.error(f"An error occurred while deleting files: {e}")
 
 bucket = Bucket()
-bucket.delete_files()
-    
+# bucket.delete_files()

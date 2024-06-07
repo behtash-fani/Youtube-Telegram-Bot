@@ -112,3 +112,7 @@ local_settings.py
 .vscode/
 *.sublime-workspace
 *.sublime-project
+
+
+# database
+*.db
