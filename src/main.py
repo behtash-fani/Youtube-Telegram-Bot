@@ -6,7 +6,6 @@ from dotenv import load_dotenv
 from yt_dl import get_video_details, is_valid_youtube_url, download_video, is_youtube_playlist
 from database import Database
 from bucket_tool import bucket
-import json
 
 # Load environment variables
 load_dotenv()
@@ -40,11 +39,13 @@ async def get_youtube_link(message: types.Message):
     user_id = message.from_user.id
     url_is_valid = is_valid_youtube_url(message.text)
     video_url = message.text
+    video_details = get_video_details(video_url)
+    video_id = video_details['video_id']
     if url_is_valid:
         if is_youtube_playlist(video_url):
             await message.answer("حیف شد، الان نمیتونیم پلی‌لیست‌های یوتوب رو دانلود کنیم برات ولی نگران نباش داریم روش کار میکنیم همین چند روز درستش میکنیم 😘 \n لطفا یک لینک ویدیو تکی ارسال کن")
         else:
-            db.add_youtube_link(user_id, video_url)
+            db.add_youtube_link(user_id, video_id)
             await message.answer("آفرین این همون لینک درسته که منظورم بود 👌🏻")
             await message.answer("حالا لطفا چند لحظه صبر کن اطلاعاتشو بهت بدم")
             video_details = get_video_details(video_url)
@@ -56,12 +57,10 @@ async def get_youtube_link(message: types.Message):
             keyboard = InlineKeyboardMarkup(row_width=2)
             for fmt in video_details['formats']:
                 if fmt["extension"] == 'mp4' or fmt["extension"] == 'mp3':
-                    print(fmt)
                     if fmt["extension"] == 'mp4':
                         button_text = f"{fmt['resolution']} - MP4"
                     elif fmt["extension"] == 'mp3':
                         button_text = f"{fmt['resolution']} - MP3"
-                    video_id = video_url.split("=")[1]
                     callback_data = f"{video_id}__{fmt['format_id']}__{fmt['resolution']}__{message.from_user.id}"
                     keyboard.insert(InlineKeyboardButton(
                         text=button_text, callback_data=callback_data))
@@ -83,24 +82,29 @@ async def download_video_callback(callback_query: types.CallbackQuery):
         format_id = data[1]
         resolution = data[2]
         user_id = data[3]
+        
+        # Update the status to pending before starting the download
+        db.update_link_status(user_id, video_id, 'pending')
+        
         if format_id.startswith('bestaudio'):
             type = 'audio'
             await callback_query.message.answer("فایل صوتی داره میپزه نه چیز داره دانلود میشه 😄")
         else:
             type = 'video'
             await callback_query.message.answer("فایل ویدیویی داره میپزه نه چیز داره دانلود میشه 😄")
-        download_result = download_video(
-            video_url, format_id, resolution, user_id, type)
+        
+        download_result = download_video(video_url, format_id, resolution, user_id, type)
+        
         if download_result['status'] == 'success':
             file_size = bucket.get_object_detail(download_result['file_name'])
-            db.update_link_status(video_url, 'success')
+            db.update_link_status(user_id, video_id, 'success')
             await callback_query.message.answer(
-                f"بفرما دیدی چقدر آسون و سریع آماده شد. لذت ببر\nاندازه فایل: {file_size}\nلینک دانلود: \n{download_result['file_url']}\n راستی این لینک رو میتونیم تا ۱ ساعت برات نگه داریم بعد پاک میشه "
+                f"بفرما دیدی چقدر آسون و سریع آماده شد. لذت ببر\nاندازه فایل: {file_size}\nلینک دانلود: \n{download_result['file_url']}\n ⚠️ راستی این لینک رو میتونیم تا ۱ ساعت برات نگه داریم بعد پاک میشه "
             )
             await callback_query.message.answer("حالا که خودت کیف کردی از سرعت ربات، ما رو هم به بقیه معرفی کن بقیه هم استفاده کنند \n @pandadl_youtube_bot")
             await callback_query.message.answer_sticker("CAACAgIAAxkBAAEMNSFmVH2EBvyPvxadOMIK7AuPgcIdpgACEQADJHFiGg4fi9EJ5yBPNQQ")
         else:
-            db.update_link_status(video_url, 'fail')
+            db.update_link_status(user_id, video_id, 'fail')
             await callback_query.message.answer("ای وای شرمنده یه مشکلی پیش اومده. حتما حلش میکنیم گریه نکنیا الان درستش میکنیم ")
             await callback_query.message.answer_sticker("CAACAgIAAxkBAAEMNSNmVH3HK8IM8ZO0akF2FdirwHnP-wACEAADJHFiGpr6FCbQRHAxNQQ")
     except Exception as e:

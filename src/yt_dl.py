@@ -143,4 +143,4 @@ def download_video(video_url, format_id, resolution, user_id, type):
         return {'status': 'success', 'file_url': file_url, 'file_name': file_name}
     else:
         logging.error("File upload failed")
-        return {'status': 'failed'}
+    return {'status': 'failed'}

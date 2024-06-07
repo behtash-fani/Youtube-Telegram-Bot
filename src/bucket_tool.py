@@ -101,4 +101,4 @@ class Bucket:
             logging.error(f"An error occurred while deleting files: {e}")
 
 bucket = Bucket()
-# bucket.delete_files()
+bucket.delete_files()
