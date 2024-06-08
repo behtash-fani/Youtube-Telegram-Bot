@@ -81,8 +81,11 @@ async def get_youtube_link(message: types.Message):
             # Create an inline keyboard
             keyboard = InlineKeyboardMarkup(row_width=2)
             for fmt in video_details['formats']:
-                if fmt["extension"] == 'mp4' or fmt["extension"] == 'mp3':
-                    button_text = f"{fmt['resolution']} - {fmt['extension'].upper()}"
+                if fmt["extension"] == 'mp4' or fmt["extension"] == 'webm' or fmt["extension"] == 'mp3':
+                    if fmt["extension"] == 'mp4' or fmt["extension"] == 'webm':
+                        button_text = f"{fmt['resolution']} - MP4"
+                    elif fmt["extension"] == 'mp3':
+                        button_text = f"{fmt['resolution']} - MP3"
                     callback_data = f"{video_id}__{fmt['format_id']}__{fmt['resolution']}__{user_id}"
                     keyboard.insert(InlineKeyboardButton(text=button_text, callback_data=callback_data))
 
