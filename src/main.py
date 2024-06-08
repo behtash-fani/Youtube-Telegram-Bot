@@ -122,7 +122,7 @@ async def download_video_callback(callback_query: types.CallbackQuery):
             file_size = bucket.get_object_detail(download_result['file_name'])
             db.update_link_status(user_id, video_id, 'success')
             await callback_query.message.answer(
-                f"دانلود با موفقیت انجام شد.\nاندازه فایل: {file_size}\nلینک دانلود: {download_result['file_url']}\nاین لینک تا ۱ ساعت معتبر است."
+                f"دانلود با موفقیت انجام شد.\nاندازه فایل: {file_size}\nلینک دانلود: \n{download_result['file_url']}\nاین لینک تا ۱ ساعت معتبر است."
             )
             await callback_query.message.answer("لطفاً ربات ما را به دوستان خود معرفی کنید.\n@pandadl_youtube_bot")
             await callback_query.message.answer_sticker("CAACAgIAAxkBAAEMNSFmVH2EBvyPvxadOMIK7AuPgcIdpgACEQADJHFiGg4fi9EJ5yBPNQQ")
