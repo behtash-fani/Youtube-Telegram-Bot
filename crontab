@@ -1,1 +1,1 @@
-0 * * * * root python /app/src/bucket_tool.py >> /var/log/cron.log 2>&1
+*/5 * * * * root python /app/src/bucket_tool.py >> /var/log/cron.log 2>&1
