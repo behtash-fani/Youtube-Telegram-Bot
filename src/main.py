@@ -1,13 +1,15 @@
 import os
 import logging
-from aiogram import Bot, Dispatcher, executor, types
-from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, KeyboardButton
+import asyncio
+from aiogram import Bot, Dispatcher
+from aiogram.types import Message, InlineKeyboardButton, InlineKeyboardMarkup, CallbackQuery
+from aiogram.filters import Command
+from aiogram.utils.keyboard import InlineKeyboardBuilder
+from aiogram.fsm.storage.memory import MemoryStorage
 from dotenv import load_dotenv
 from yt_dl import get_video_details, is_valid_youtube_url, download_video, is_youtube_playlist
 from database import Database
 from bucket_tool import bucket
-from aiogram.types import ParseMode
-import asyncio
 
 # Load environment variables
 load_dotenv()
@@ -21,26 +23,23 @@ if not API_TOKEN:
     raise ValueError("No API_TOKEN provided")
 
 # Initialize bot and dispatcher
-loop = asyncio.new_event_loop()
-asyncio.set_event_loop(loop)
-bot = Bot(token=API_TOKEN, parse_mode=ParseMode.HTML)
-dp = Dispatcher(bot, loop=loop)
+bot = Bot(token=API_TOKEN)
+dp = Dispatcher()
+
 db = Database("bot_database.db")
 
-keyboard = ReplyKeyboardMarkup(resize_keyboard=True)
-keyboard.add(KeyboardButton("مشاهده لینک‌های قبلی"))
 
-@dp.message_handler(commands=['start'])
-async def cmd_start(message: types.Message):
+@dp.message(Command(commands=["start"]))
+async def cmd_start(message: Message):
     user_id = message.from_user.id
     username = message.from_user.username
     await db.add_user(user_id, username)
     await message.answer_sticker("CAACAgIAAxkBAAEMNRRmVHYlX3AeIP2klFDB-7Q_bDzvJwACCgADJHFiGtSUmaRviPBGNQQ")
-    await message.answer("سلام، به پاندا دی‌ال خوش آمدید.", reply_markup=keyboard)
+    await message.answer("سلام، به پاندا دی‌ال خوش آمدید.")
     await message.answer("لطفاً یک لینک یوتیوب ارسال کنید تا ویدیو آن را برای شما بارگذاری کنیم و لینک بدون فیلتر ارائه دهیم.")
 
-@dp.message_handler(lambda message: message.text == "مشاهده لینک‌های قبلی")
-async def show_user_links(message: types.Message):
+@dp.message(Command(commands=["old_links"]))
+async def show_user_links(message: Message):
     user_id = message.from_user.id
     if not await db.user_exists(user_id):
         await message.answer("ابتدا دستور /start را بزنید.")
@@ -58,8 +57,8 @@ async def show_user_links(message: types.Message):
                 disable_web_page_preview=True
             )
 
-@dp.message_handler()
-async def get_youtube_link(message: types.Message):
+@dp.message()
+async def get_youtube_link(message: Message):
     user_id = message.from_user.id
     username = message.from_user.username
     if not await db.user_exists(user_id):
@@ -82,8 +81,8 @@ async def get_youtube_link(message: types.Message):
             await message.answer("کاور ویدیو:")
             await message.answer_photo(video_details['cover_url'])
 
-            # Create an inline keyboard
-            keyboard = InlineKeyboardMarkup(row_width=2)
+            builder = InlineKeyboardBuilder()
+            builder.max_width = 2
             for fmt in video_details['formats']:
                 if fmt["extension"] == 'mp4' or fmt["extension"] == 'webm' or fmt["extension"] == 'mp3':
                     if fmt["extension"] == 'mp4' or fmt["extension"] == 'webm':
@@ -91,18 +90,19 @@ async def get_youtube_link(message: types.Message):
                     elif fmt["extension"] == 'mp3':
                         button_text = f"{fmt['resolution']} - MP3"
                     callback_data = f"{video_id}__{fmt['format_id']}__{fmt['resolution']}__{user_id}"
-                    keyboard.insert(InlineKeyboardButton(text=button_text, callback_data=callback_data))
+                    builder.button(text=button_text, callback_data=callback_data)
 
-            await message.answer("لطفاً کیفیت مورد نظر را انتخاب کنید:", reply_markup=keyboard)
+            await message.answer("لطفاً کیفیت مورد نظر را انتخاب کنید:", reply_markup=builder.as_markup())
     else:
         await message.answer_sticker("CAACAgIAAxkBAAEMNRlmVHrNarqWDOtaoyqP0Zc4kGc6bQACDAADJHFiGsekexRHa4hiNQQ")
         await message.answer("لینک ارسالی معتبر نیست. لطفاً یک لینک یوتیوب صحیح ارسال کنید.")
 
-@dp.callback_query_handler()
-async def download_video_callback(callback_query: types.CallbackQuery):
+@dp.callback_query()
+async def download_video_callback(callback_query: CallbackQuery):
     await bot.answer_callback_query(callback_query.id)
     try:
         data = callback_query.data.split('__')
+        print(data)
         video_id = data[0]
         video_url = f'https://www.youtube.com/watch?v={video_id}'
         format_id = data[1]
@@ -142,4 +142,4 @@ async def download_video_callback(callback_query: types.CallbackQuery):
         await callback_query.message.answer("مشکلی در پردازش درخواست شما پیش آمد. لطفاً دوباره تلاش کنید.")
 
 if __name__ == '__main__':
-    executor.start_polling(dp, skip_updates=True, loop=loop)
+    asyncio.run(dp.start_polling(bot, skip_updates=True))
