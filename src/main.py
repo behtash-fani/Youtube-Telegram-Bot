@@ -6,6 +6,8 @@ from dotenv import load_dotenv
 from yt_dl import get_video_details, is_valid_youtube_url, download_video, is_youtube_playlist
 from database import Database
 from bucket_tool import bucket
+from aiogram.types import ParseMode
+import asyncio
 
 # Load environment variables
 load_dotenv()
@@ -19,8 +21,10 @@ if not API_TOKEN:
     raise ValueError("No API_TOKEN provided")
 
 # Initialize bot and dispatcher
-bot = Bot(token=API_TOKEN)
-dp = Dispatcher(bot)
+loop = asyncio.new_event_loop()
+asyncio.set_event_loop(loop)
+bot = Bot(token=API_TOKEN, parse_mode=ParseMode.HTML)
+dp = Dispatcher(bot, loop=loop)
 db = Database("bot_database.db")
 
 keyboard = ReplyKeyboardMarkup(resize_keyboard=True)
@@ -30,7 +34,7 @@ keyboard.add(KeyboardButton("مشاهده لینک‌های قبلی"))
 async def cmd_start(message: types.Message):
     user_id = message.from_user.id
     username = message.from_user.username
-    db.add_user(user_id, username)
+    await db.add_user(user_id, username)
     await message.answer_sticker("CAACAgIAAxkBAAEMNRRmVHYlX3AeIP2klFDB-7Q_bDzvJwACCgADJHFiGtSUmaRviPBGNQQ")
     await message.answer("سلام، به پاندا دی‌ال خوش آمدید.", reply_markup=keyboard)
     await message.answer("لطفاً یک لینک یوتیوب ارسال کنید تا ویدیو آن را برای شما بارگذاری کنیم و لینک بدون فیلتر ارائه دهیم.")
@@ -38,11 +42,11 @@ async def cmd_start(message: types.Message):
 @dp.message_handler(lambda message: message.text == "مشاهده لینک‌های قبلی")
 async def show_user_links(message: types.Message):
     user_id = message.from_user.id
-    if not db.user_exists(user_id):
+    if not await db.user_exists(user_id):
         await message.answer("ابتدا دستور /start را بزنید.")
         return
 
-    links = db.get_user_links(user_id)
+    links = await db.get_user_links(user_id)
     if not links:
         await message.answer("هیچ لینکی برای شما ثبت نشده است.")
     else:
@@ -58,7 +62,7 @@ async def show_user_links(message: types.Message):
 async def get_youtube_link(message: types.Message):
     user_id = message.from_user.id
     username = message.from_user.username
-    if not db.user_exists(user_id):
+    if not await db.user_exists(user_id):
         await message.answer("ابتدا دستور /start را بزنید.")
         return
     
@@ -69,12 +73,12 @@ async def get_youtube_link(message: types.Message):
         if is_youtube_playlist(video_url):
             await message.answer("در حال حاضر نمی‌توانیم پلی‌لیست‌های یوتیوب را دانلود کنیم. لطفاً یک لینک ویدیو تکی ارسال کنید.")
         else:
-            video_details = get_video_details(video_url)
+            await message.answer("لینک معتبر است.\nلطفاً چند لحظه صبر کنید تا اطلاعات ویدیو به شما نمایش داده شود.")
+            video_details = await get_video_details(video_url)
             video_id = video_details['video_id']
             title = video_details['title']
-            db.add_youtube_link(user_id, video_id, title)
-            await message.answer("لینک معتبر است. لطفاً چند لحظه صبر کنید تا اطلاعات ویدیو به شما نمایش داده شود.")
-            await message.answer(f"عنوان ویدیو:\n {title}")
+            await db.add_youtube_link(user_id, video_id, title)
+            await message.answer(f"عنوان ویدیو:\n `{title}`", parse_mode="Markdown")
             await message.answer("کاور ویدیو:")
             await message.answer_photo(video_details['cover_url'])
 
@@ -105,12 +109,12 @@ async def download_video_callback(callback_query: types.CallbackQuery):
         resolution = data[2]
         user_id = data[3]
 
-        if not db.user_exists(user_id):
+        if not await db.user_exists(user_id):
             await callback_query.message.answer("ابتدا دستور /start را بزنید.")
             return
 
         # Update the status to pending before starting the download
-        db.update_link_status(user_id, video_id, 'pending')
+        await db.update_link_status(user_id, video_id, 'pending')
 
         if format_id.startswith('bestaudio'):
             file_type = 'audio'
@@ -119,18 +123,18 @@ async def download_video_callback(callback_query: types.CallbackQuery):
             file_type = 'video'
             await callback_query.message.answer("فایل ویدیویی در حال دانلود است.")
 
-        download_result = download_video(video_url, format_id, resolution, user_id, file_type)
+        download_result = await download_video(video_url, format_id, resolution, user_id, file_type)
 
         if download_result['status'] == 'success':
-            file_size = bucket.get_object_detail(download_result['file_name'])
-            db.update_link_status(user_id, video_id, 'success')
+            file_size = await bucket.get_object_detail(download_result['file_name'])
+            await db.update_link_status(user_id, video_id, 'success')
             await callback_query.message.answer(
                 f"دانلود با موفقیت انجام شد.\nاندازه فایل: {file_size}\nلینک دانلود: \n{download_result['file_url']}\nاین لینک تا ۱ ساعت معتبر است."
             )
             await callback_query.message.answer("لطفاً ربات ما را به دوستان خود معرفی کنید.\n@pandadl_youtube_bot")
             await callback_query.message.answer_sticker("CAACAgIAAxkBAAEMNSFmVH2EBvyPvxadOMIK7AuPgcIdpgACEQADJHFiGg4fi9EJ5yBPNQQ")
         else:
-            db.update_link_status(user_id, video_id, 'fail')
+            await db.update_link_status(user_id, video_id, 'fail')
             await callback_query.message.answer("مشکلی در دانلود فایل پیش آمد. لطفاً دوباره تلاش کنید.")
             await callback_query.message.answer_sticker("CAACAgIAAxkBAAEMNSNmVH3HK8IM8ZO0akF2FdirwHnP-wACEAADJHFiGpr6FCbQRHAxNQQ")
     except Exception as e:
@@ -138,4 +142,4 @@ async def download_video_callback(callback_query: types.CallbackQuery):
         await callback_query.message.answer("مشکلی در پردازش درخواست شما پیش آمد. لطفاً دوباره تلاش کنید.")
 
 if __name__ == '__main__':
-    executor.start_polling(dp, skip_updates=True)
+    executor.start_polling(dp, skip_updates=True, loop=loop)

@@ -1,69 +1,65 @@
 import sqlite3
+import asyncio
+from contextlib import closing
+
 
 class Database:
     def __init__(self, db_name):
-        self.conn = sqlite3.connect(db_name)
-        self.cursor = self.conn.cursor()
+        self.db_name = db_name
         self.create_tables()
 
     def create_tables(self):
-        self.cursor.execute('''
+        with closing(sqlite3.connect(self.db_name)) as conn, conn, closing(conn.cursor()) as cursor:
+            cursor.execute('''
             CREATE TABLE IF NOT EXISTS users (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                telegram_id INTEGER UNIQUE,
+                user_id INTEGER PRIMARY KEY,
                 username TEXT
             )
-        ''')
-        self.cursor.execute('''
+            ''')
+            cursor.execute('''
             CREATE TABLE IF NOT EXISTS youtube_links (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 user_id INTEGER,
                 video_id TEXT,
                 title TEXT,
                 status TEXT,
-                date_added TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                UNIQUE(user_id, video_id),
-                FOREIGN KEY(user_id) REFERENCES users(id)
+                FOREIGN KEY (user_id) REFERENCES users(user_id)
             )
-        ''')
-        self.conn.commit()
+            ''')
+            conn.commit()
 
-    def add_user(self, telegram_id, username):
-        self.cursor.execute('''
-            INSERT OR REPLACE INTO users (telegram_id, username) 
-            VALUES (?, ?)
-        ''', (telegram_id, username))
-        self.conn.commit()
+    async def add_user(self, user_id, username):
+        await self.execute_query('INSERT OR IGNORE INTO users (user_id, username) VALUES (?, ?)', (user_id, username))
 
-    def user_exists(self, telegram_id):
-        self.cursor.execute('''
-            SELECT 1 FROM users WHERE telegram_id = ?
-        ''', (telegram_id,))
-        return self.cursor.fetchone() is not None
+    async def user_exists(self, user_id):
+        result = await self.fetch_query('SELECT 1 FROM users WHERE user_id = ?', (user_id,))
+        return bool(result)
 
-    def add_youtube_link(self, user_id, video_id, title):
-        self.cursor.execute('''
-            INSERT OR REPLACE INTO youtube_links (user_id, video_id, title, status) 
-            VALUES (?, ?, ?, 'pending')
-        ''', (user_id, video_id, title))
-        self.conn.commit()
+    async def add_youtube_link(self, user_id, video_id, title):
+        await self.execute_query('INSERT INTO youtube_links (user_id, video_id, title, status) VALUES (?, ?, ?, ?)', (user_id, video_id, title, 'pending'))
 
-    def update_link_status(self, user_id, video_id, status):
-        self.cursor.execute('''
-            UPDATE youtube_links 
-            SET status = ? 
-            WHERE user_id = ? AND video_id = ?
-        ''', (status, user_id, video_id))
-        self.conn.commit()
+    async def get_user_links(self, user_id):
+        result = await self.fetch_query('SELECT video_id, title, status FROM youtube_links WHERE user_id = ?', (user_id,))
+        return result
 
-    def get_user_links(self, user_id):
-        self.cursor.execute('''
-            SELECT video_id, title, status 
-            FROM youtube_links 
-            WHERE user_id = ? 
-            ORDER BY date_added
-                ''', (user_id,))
-        return self.cursor.fetchall()
+    async def update_link_status(self, user_id, video_id, status):
+        await self.execute_query('UPDATE youtube_links SET status = ? WHERE user_id = ? AND video_id = ?', (status, user_id, video_id))
 
-    def close(self):
-        self.conn.close()
+    async def execute_query(self, query, params=()):
+        loop = asyncio.get_event_loop()
+        await loop.run_in_executor(None, self._execute_query, query, params)
+
+    def _execute_query(self, query, params):
+        with closing(sqlite3.connect(self.db_name)) as conn, conn, closing(conn.cursor()) as cursor:
+            cursor.execute(query, params)
+            conn.commit()
+
+    async def fetch_query(self, query, params=()):
+        loop = asyncio.get_event_loop()
+        result = await loop.run_in_executor(None, self._fetch_query, query, params)
+        return result
+
+    def _fetch_query(self, query, params):
+        with closing(sqlite3.connect(self.db_name)) as conn, closing(conn.cursor()) as cursor:
+            cursor.execute(query, params)
+            return cursor.fetchall()

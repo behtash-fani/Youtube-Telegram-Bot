@@ -3,7 +3,7 @@ import re
 import os
 from bucket_tool import bucket
 import logging
-
+import asyncio
 
 def is_valid_youtube_url(video_url):
     youtube_regex = re.compile(
@@ -12,7 +12,6 @@ def is_valid_youtube_url(video_url):
     )
     return youtube_regex.match(video_url) is not None
 
-
 def is_youtube_playlist(video_url):
     playlist_regex = re.compile(
         r'^(https?://)?(www\.)?(youtube\.com|youtu\.?be)/.*(list=).+$',
@@ -20,64 +19,59 @@ def is_youtube_playlist(video_url):
     )
     return playlist_regex.match(video_url) is not None
 
-
-def get_video_details(video_url):
+async def get_video_details(video_url):
     ydl_opts = {
         'format': 'bestvideo+bestaudio/best',
         'noplaylist': True,
     }
 
-    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-        info_dict = ydl.extract_info(video_url, download=False)
-        video_title = info_dict.get('title', 'N/A')
-        thumbnails = info_dict.get('thumbnails', [])
+    loop = asyncio.get_event_loop()
+    info_dict = await loop.run_in_executor(None, lambda: yt_dlp.YoutubeDL(ydl_opts).extract_info(video_url, download=False))
 
-        # Find the highest resolution thumbnail
-        if thumbnails:
-            highest_quality_thumbnail = max(
-                thumbnails, key=lambda x: x.get('height', 0))
-            cover_url = highest_quality_thumbnail.get('url', 'N/A')
-        else:
-            cover_url = 'N/A'
+    video_title = info_dict.get('title', 'N/A')
+    thumbnails = info_dict.get('thumbnails', [])
 
-        formats = info_dict.get('formats', [])
-        format_dict = {}
+    # Find the highest resolution thumbnail
+    if thumbnails:
+        highest_quality_thumbnail = max(thumbnails, key=lambda x: x.get('height', 0))
+        cover_url = highest_quality_thumbnail.get('url', 'N/A')
+    else:
+        cover_url = 'N/A'
 
-        # Filter formats to keep only the best quality per resolution
-        for fmt in formats:
-            if fmt['vcodec'] != 'none' and fmt['acodec'] == 'none' and fmt.get('height'):
-                resolution = f"{fmt['height']}p"
-                if resolution not in format_dict or fmt['format_id'] > format_dict[resolution]['format_id']:
-                    format_dict[resolution] = {
-                        'format_id': fmt['format_id'],
-                        'extension': fmt['ext'],
-                        'resolution': resolution,
-                        'note': fmt.get('format_note', 'N/A'),
-                    }
+    formats = info_dict.get('formats', [])
+    format_dict = {}
 
-        # Convert the format dictionary back to a list
-        format_list = list(format_dict.values())
+    # Filter formats to keep only the best quality per resolution
+    for fmt in formats:
+        if fmt['vcodec'] != 'none' and fmt['acodec'] == 'none' and fmt.get('height'):
+            resolution = f"{fmt['height']}p"
+            if resolution not in format_dict or fmt['format_id'] > format_dict[resolution]['format_id']:
+                format_dict[resolution] = {
+                    'format_id': fmt['format_id'],
+                    'extension': fmt['ext'],
+                    'resolution': resolution,
+                    'note': fmt.get('format_note', 'N/A'),
+                }
 
-        # Add audio formats
-        audio_formats = [
-            {'format_id': 'bestaudio_128', 'extension': 'mp3',
-                'resolution': '128kbps', 'note': '128kbps'},
-            {'format_id': 'bestaudio_320', 'extension': 'mp3',
-                'resolution': '320kbps', 'note': '320kbps'},
-        ]
-        format_list.extend(audio_formats)
+    # Convert the format dictionary back to a list
+    format_list = list(format_dict.values())
 
-        return {
-            'title': video_title,
-            'cover_url': cover_url,
-            'formats': format_list,
-            'video_id': info_dict.get('id', 'N/A')
-        }
+    # Add audio formats
+    audio_formats = [
+        {'format_id': 'bestaudio_128', 'extension': 'mp3', 'resolution': '128kbps', 'note': '128kbps'},
+        {'format_id': 'bestaudio_320', 'extension': 'mp3', 'resolution': '320kbps', 'note': '320kbps'},
+    ]
+    format_list.extend(audio_formats)
 
+    return {
+        'title': video_title,
+        'cover_url': cover_url,
+        'formats': format_list,
+        'video_id': info_dict.get('id', 'N/A')
+    }
 
-
-def download_video(video_url, format_id, resolution, user_id, type):
-    video_details = get_video_details(video_url)
+async def download_video(video_url, format_id, resolution, user_id, type):
+    video_details = await get_video_details(video_url)
     video_id = video_details['video_id']
 
     # Define the download path
@@ -118,9 +112,9 @@ def download_video(video_url, format_id, resolution, user_id, type):
 
     logging.info(f"Downloading video to {full_file_path}")
 
+    loop = asyncio.get_event_loop()
     try:
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            ydl.download([video_url])
+        await loop.run_in_executor(None, lambda: yt_dlp.YoutubeDL(ydl_opts).download([video_url]))
     except Exception as e:
         logging.error(f"Error downloading video: {e}")
         return {'status': 'failed'}
@@ -136,7 +130,7 @@ def download_video(video_url, format_id, resolution, user_id, type):
         return {'status': 'failed'}
 
     bucket_name = 'pandadl-media'
-    upload_status = bucket.upload_file(extracted_file_path, bucket_name, file_name + '.mp3' if type == 'audio' else file_name)
+    upload_status = await bucket.upload_file(extracted_file_path, bucket_name, file_name + '.mp3' if type == 'audio' else file_name)
     if upload_status:
         logging.info("File uploaded successfully")
         file_url = f"https://pandadl-media.s3.ir-thr-at1.arvanstorage.ir/{file_name + '.mp3' if type == 'audio' else file_name}"
