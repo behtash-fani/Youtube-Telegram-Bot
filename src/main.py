@@ -1,14 +1,14 @@
-import os
-import logging
-import asyncio
-from aiogram import Bot, Dispatcher
-from aiogram.types import Message, CallbackQuery
-from aiogram.filters import Command
-from aiogram.utils.keyboard import InlineKeyboardBuilder
-from dotenv import load_dotenv
 from yt_dl import get_video_details, is_valid_youtube_url, download_video, is_youtube_playlist
-from database import Database
+from aiogram.utils.keyboard import InlineKeyboardBuilder
+from aiogram.types import Message, CallbackQuery
+from aiogram import Bot, Dispatcher
+from aiogram.filters import Command
+from dotenv import load_dotenv
 from bucket_tool import bucket
+from database import Database
+import asyncio
+import logging
+import os
 
 # Load environment variables
 load_dotenv()
@@ -76,7 +76,7 @@ async def get_youtube_link(message: Message):
             video_details = await get_video_details(video_url)
             video_id = video_details['video_id']
             title = video_details['title']
-            await db.add_youtube_link(user_id, video_id, title)
+            await db.add_or_update_youtube_link(user_id, video_id, title)
             await message.answer(f"عنوان ویدیو:\n `{title}`", parse_mode="Markdown")
             await message.answer("کاور ویدیو:")
             await message.answer_photo(video_details['cover_url'])
