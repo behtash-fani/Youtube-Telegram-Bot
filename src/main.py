@@ -2,10 +2,9 @@ import os
 import logging
 import asyncio
 from aiogram import Bot, Dispatcher
-from aiogram.types import Message, InlineKeyboardButton, InlineKeyboardMarkup, CallbackQuery
+from aiogram.types import Message, CallbackQuery
 from aiogram.filters import Command
 from aiogram.utils.keyboard import InlineKeyboardBuilder
-from aiogram.fsm.storage.memory import MemoryStorage
 from dotenv import load_dotenv
 from yt_dl import get_video_details, is_valid_youtube_url, download_video, is_youtube_playlist
 from database import Database
@@ -23,8 +22,10 @@ if not API_TOKEN:
     raise ValueError("No API_TOKEN provided")
 
 # Initialize bot and dispatcher
+loop = asyncio.new_event_loop()
+asyncio.set_event_loop(loop)
 bot = Bot(token=API_TOKEN)
-dp = Dispatcher()
+dp = Dispatcher(loop=loop)
 
 db = Database("bot_database.db")
 
@@ -60,7 +61,6 @@ async def show_user_links(message: Message):
 @dp.message()
 async def get_youtube_link(message: Message):
     user_id = message.from_user.id
-    username = message.from_user.username
     if not await db.user_exists(user_id):
         await message.answer("ابتدا دستور /start را بزنید.")
         return
@@ -102,7 +102,6 @@ async def download_video_callback(callback_query: CallbackQuery):
     await bot.answer_callback_query(callback_query.id)
     try:
         data = callback_query.data.split('__')
-        print(data)
         video_id = data[0]
         video_url = f'https://www.youtube.com/watch?v={video_id}'
         format_id = data[1]

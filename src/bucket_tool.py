@@ -2,7 +2,7 @@ import aioboto3
 from botocore.config import Config
 from botocore.exceptions import NoCredentialsError
 import os
-from datetime import datetime, timedelta
+from datetime import datetime
 import logging
 import asyncio
 
@@ -10,7 +10,7 @@ class Bucket:
     def __init__(self):
         self.session = aioboto3.Session()
         self.config = Config(
-            region_name='us-east-1',  # باید به درستی تنظیم شود
+            region_name='us-east-1',
             signature_version='s3v4'
         )
         self.aws_access_key_id = '109456c6-6a0f-4791-9a38-862c145b1d7e'
