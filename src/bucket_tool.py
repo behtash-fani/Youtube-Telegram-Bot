@@ -5,6 +5,11 @@ import os
 from datetime import datetime
 import logging
 import asyncio
+from dotenv import load_dotenv
+import threading
+import time
+
+load_dotenv()
 
 class Bucket:
     def __init__(self):
@@ -13,8 +18,8 @@ class Bucket:
             region_name='us-east-1',
             signature_version='s3v4'
         )
-        self.aws_access_key_id = '109456c6-6a0f-4791-9a38-862c145b1d7e'
-        self.aws_secret_access_key = '750860b05b20879359504c092a24787382f7f6452969b7d68bd50247d637a43a'
+        self.aws_access_key_id = os.getenv('AWS_ACCESS_KEY_ID')
+        self.aws_secret_access_key = os.getenv('AWS_SECRET_ACCESS_KEY')
         self.endpoint_url = 'https://s3.ir-thr-at1.arvanstorage.ir'
 
     async def get_object_detail(self, file_name=None):
@@ -93,7 +98,8 @@ class Bucket:
         except FileNotFoundError:
             logging.error(f"File {file_path} not found.")
         except Exception as e:
-            logging.error(f"Error occurred while trying to remove the file: {e}")
+            logging.error(
+                f"Error occurred while trying to remove the file: {e}")
 
     async def delete_files(self):
         async with self.session.client(
@@ -111,7 +117,8 @@ class Bucket:
                         current_time = datetime.now(last_modified.tzinfo)
                         if (current_time - last_modified).total_seconds() >= 3600:
                             await conn.delete_object(Bucket="pandadl-media", Key=file_name)
-                            logging.info(f"File {file_name} has expired and been deleted.")
+                            logging.info(
+                                f"File {file_name} has expired and been deleted.")
                 else:
                     logging.info("No files found.")
             except NoCredentialsError:
@@ -120,4 +127,14 @@ class Bucket:
                 logging.error(f"An error occurred while deleting files: {e}")
 
 bucket = Bucket()
-asyncio.run(bucket.delete_files())
+
+def run_delete_files():
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    while True:
+        loop.run_until_complete(bucket.delete_files())
+        time.sleep(300)
+
+delete_thread = threading.Thread(target=run_delete_files)
+delete_thread.daemon = True
+delete_thread.start()

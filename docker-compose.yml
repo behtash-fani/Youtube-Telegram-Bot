@@ -5,7 +5,7 @@ services:
     container_name: pandadlbot
     build:
       context: .
-      dockerfile: Dockerfile.pandadlbot
+      dockerfile: Dockerfile
     volumes:
       - ./src:/app/src
     working_dir: /app/src
@@ -14,15 +14,4 @@ services:
       - API_TOKEN=${API_TOKEN}
     ports:
       - "8000:8000"
-    restart: always
-
-  cronjob:
-    container_name: cronjob
-    build:
-      context: .
-      dockerfile: Dockerfile.cronjob
-    volumes:
-      - ./src:/app/src
-    environment:
-      - TZ=UTC
     restart: always
