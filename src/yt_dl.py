@@ -162,7 +162,14 @@ async def download_video(video_url, format_id, resolution, user_id, type):
     if upload_status:
         logging.info("File uploaded successfully")
         file_url = f"https://pandadl-media.s3.ir-thr-at1.arvanstorage.ir/{file_name + '.mp3' if type == 'audio' else file_name}"
-        return {'status': 'success', 'file_url': file_url, 'file_name': file_name, 'video_id': video_id, 'cover_url': cover_url, 'title': title}
+        return {
+            'status': 'success',
+            'file_url': file_url,
+            'file_name': file_name,
+            'video_id': video_id,
+            'cover_url': cover_url,
+            'title': video_details['title']
+            }
     else:
         logging.error("File upload failed")
     return {'status': 'failed'}
