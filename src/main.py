@@ -63,16 +63,16 @@ async def get_youtube_link(message: Message):
         if not video_urls:
             await message.answer("خطایی در پردازش پلی‌لیست رخ داد. لطفاً مجدداً تلاش کنید.")
             return
-        await message.answer(f"پلی‌لیست شما شامل {len(video_urls)} ویدیو است. کیفیت مورد نظر خود را انتخاب کنید.")
+        await message.answer(f"✅ پلی‌لیست شامل {len(video_urls)} ویدیو است.")
 
         resolutions = ["480p", "720p", "1080p"]
         keyboard_builder = InlineKeyboardBuilder()
         for res in resolutions:
             callback_data = f'pl_{playlist_id}_{res}_{user_id}'
-            keyboard_builder.button(text=f'{res} - MP4', callback_data=callback_data[:64])
-        keyboard_builder.adjust(3)
+            keyboard_builder.button(text=f'🎬 {res} - MP4', callback_data=callback_data[:64])
+        keyboard_builder.adjust(2)
         keyboard = keyboard_builder.as_markup()
-        await message.answer("لطفاً کیفیت دانلود را انتخاب کنید:", reply_markup=keyboard)
+        await message.answer("لطفا کیفیت دانلود را برای همه ویدیوها انتخاب کنید", reply_markup=keyboard)
         return
 
     await message.answer("✅ لینک معتبر است.\n\nلطفاً چند لحظه صبر کنید تا اطلاعات ویدیو به شما نمایش داده شود.")
@@ -104,22 +104,30 @@ async def process_playlist_callback(callback_query: CallbackQuery):
     playlist_id = data_parts[1]
     resolution, user_id = data_parts[2], data_parts[3]
     playlist_url = f'https://www.youtube.com/playlist?list={playlist_id}'
-    await callback_query.message.answer(f"دانلود پلی‌لیست با کیفیت {resolution} آغاز شد. لطفاً صبر کنید...")
+    await callback_query.message.answer(f"دانلود پلی‌لیست با کیفیت {resolution} آغاز شد.\nلطفاً صبر کنید...")
 
     video_urls, _ = await get_playlist_videos(playlist_url)
     for video_url in video_urls:
-        result = await download_video(video_url, None, resolution, user_id, 'video')
-        if result['status'] == 'success':
-            await bot.send_photo(callback_query.message.chat.id, result['cover_url'])  # ارسال کاور ویدیو
-            await bot.send_message(callback_query.message.chat.id, f"ویدیو با موفقیت دانلود و بارگذاری شد.\nلینک: \n{result['file_url']}")
-            video_id = result['video_id']
-            title = result['title']  # اضافه کردن عنوان ویدیو
+        download_result = await download_video(video_url, None, resolution, user_id, 'video')
+        if download_result['status'] == 'success':
+            await callback_query.message.answer(f"📝 عنوان ویدیو:\n\n `{download_result['title']}`", parse_mode="Markdown")
+            await callback_query.message.answer(f"🖼 کاور ویدیو:")
+            await bot.send_photo(callback_query.message.chat.id, download_result['cover_url'])  # ارسال کاور ویدیو
+            file_size = await bucket.get_object_detail(download_result['file_name'])
+            await callback_query.message.answer(
+                    f"دانلود با موفقیت انجام شد.\nاندازه فایل: {file_size}\nلینک دانلود: \n{download_result['file_url']}\n\nاین لینک تا ۱ ساعت معتبر است."
+                )
+            # await bot.send_message(callback_query.message.chat.id, f"ویدیو با موفقیت دانلود و بارگذاری شد.\nلینک: \n{result['file_url']}")
+            video_id = download_result['video_id']
+            title = download_result['title']  # اضافه کردن عنوان ویدیو
             await db.add_or_update_youtube_link(user_id, video_id, title, 'completed')
         else:
             await bot.send_message(callback_query.message.chat.id, "خطایی در دانلود ویدیو رخ داد. لطفاً مجدداً تلاش کنید.")
             await db.add_or_update_youtube_link(user_id, video_id, '', 'failed')
 
-    await callback_query.message.answer("تمام ویدیوهای پلی‌لیست با موفقیت دانلود و بارگذاری شدند.")
+    await callback_query.message.answer("✅ تمام ویدیوهای پلی‌لیست با موفقیت دانلود شدند.")
+    await callback_query.message.answer("لطفاً ربات ما را به دوستان خود معرفی کنید.\n@pandadl_youtube_bot")
+    await callback_query.message.answer_sticker("CAACAgIAAxkBAAEMNSFmVH2EBvyPvxadOMIK7AuPgcIdpgACEQADJHFiGg4fi9EJ5yBPNQQ")
 
 
 @dp.callback_query(lambda callback_query: callback_query.data.startswith('vid__'))
@@ -141,7 +149,7 @@ async def process_video_callback(callback_query: CallbackQuery):
     if download_result['status'] == 'success':
         file_size = await bucket.get_object_detail(download_result['file_name'])
         await callback_query.message.answer(
-                f"دانلود با موفقیت انجام شد.\nاندازه فایل: {file_size}\nلینک دانلود: \n{download_result['file_url']}\nاین لینک تا ۱ ساعت معتبر است."
+                f"دانلود با موفقیت انجام شد.\nاندازه فایل: {file_size}\nلینک دانلود: \n{download_result['file_url']}\n\nاین لینک تا ۱ ساعت معتبر است."
             )
         await db.add_or_update_youtube_link(user_id, video_id, download_result['title'], 'completed')
         await callback_query.message.answer("لطفاً ربات ما را به دوستان خود معرفی کنید.\n@pandadl_youtube_bot")
