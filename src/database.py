@@ -75,7 +75,3 @@ class Database:
             'UPDATE youtube_links SET status = ? WHERE user_id = ? AND video_id = ?',
             (status, user_id, video_id)
         )
-        
-    async def get_user_links(self, user_id):
-        result = await self.execute_query_with_result('SELECT video_id, title, status FROM youtube_links WHERE user_id = ?', (user_id,))
-        return result

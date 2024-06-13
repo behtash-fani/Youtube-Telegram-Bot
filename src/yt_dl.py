@@ -4,6 +4,7 @@ import os
 from bucket_tool import bucket
 import logging
 import asyncio
+from slugify import slugify
 
 def is_valid_youtube_url(video_url):
     youtube_regex = re.compile(
@@ -70,18 +71,37 @@ async def get_video_details(video_url):
         'video_id': info_dict.get('id', 'N/A')
     }
 
+async def get_playlist_videos(playlist_url):
+    ydl_opts = {
+        'extract_flat': 'in_playlist',
+        'noplaylist': False,
+    }
+
+    loop = asyncio.get_event_loop()
+    info_dict = await loop.run_in_executor(None, lambda: yt_dlp.YoutubeDL(ydl_opts).extract_info(playlist_url, download=False))
+
+    if 'entries' not in info_dict:
+        return [], None
+
+    playlist_id = info_dict.get('id', None)  # ذخیره کد پلی‌لیست
+    video_urls = [entry['url'] for entry in info_dict['entries'] if entry.get('url')]
+
+    return video_urls, playlist_id
+
+
 async def download_video(video_url, format_id, resolution, user_id, type):
     video_details = await get_video_details(video_url)
     video_id = video_details['video_id']
+    cover_url = video_details['cover_url']
+    title = slugify(video_details['title'], allow_unicode=True)
 
     # Define the download path
     download_path = f'downloads/{user_id}'
-    if not os.path.exists(download_path):
-        os.makedirs(download_path)
+    os.makedirs(download_path, exist_ok=True)
 
     if type == 'audio':
         extension = 'mp3'
-        file_name = f'{user_id}_{video_id}'
+        file_name = f'{title}'
         full_file_path = os.path.join(download_path, file_name)
 
         preferred_quality = '128' if resolution == '128kbps' else '320'
@@ -99,17 +119,26 @@ async def download_video(video_url, format_id, resolution, user_id, type):
         }
     elif type == 'video':
         extension = 'mp4'
-        file_name = f'{user_id}_{video_id}.{extension}'
+        file_name = f'{title}.{extension}'
         full_file_path = os.path.join(download_path, file_name)
 
+        if resolution == '480p':
+            format_id = 'bestvideo[height<=480]+bestaudio/best'
+        elif resolution == '720p':
+            format_id = 'bestvideo[height<=720]+bestaudio/best'
+        elif resolution == '1080p':
+            format_id = 'bestvideo[height<=1080]+bestaudio/best'
+        else:
+            format_id = f'{format_id}+bestaudio/best'
+
         ydl_opts = {
-            'format': f'{format_id}+bestaudio/best',
+            'format': format_id,
             'outtmpl': full_file_path,
             'noplaylist': True,
             'quiet': False,
-            'merge_output_format': 'mp4'  # Ensure merging to mp4
+            'merge_output_format': 'mp4'
         }
-
+        
     logging.info(f"Downloading video to {full_file_path}")
 
     loop = asyncio.get_event_loop()
@@ -120,7 +149,6 @@ async def download_video(video_url, format_id, resolution, user_id, type):
         return {'status': 'failed'}
 
     if type == 'audio':
-        # After the download and extraction, the file will have an extra .mp3 extension
         extracted_file_path = full_file_path + '.mp3'
     else:
         extracted_file_path = full_file_path
@@ -134,7 +162,7 @@ async def download_video(video_url, format_id, resolution, user_id, type):
     if upload_status:
         logging.info("File uploaded successfully")
         file_url = f"https://pandadl-media.s3.ir-thr-at1.arvanstorage.ir/{file_name + '.mp3' if type == 'audio' else file_name}"
-        return {'status': 'success', 'file_url': file_url, 'file_name': file_name}
+        return {'status': 'success', 'file_url': file_url, 'file_name': file_name, 'video_id': video_id, 'cover_url': cover_url, 'title': title}
     else:
         logging.error("File upload failed")
     return {'status': 'failed'}

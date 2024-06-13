@@ -58,12 +58,13 @@ class Bucket:
 
         size_mb = filesize / (1024 * 1024)
         if size_mb < 1024:
-            return f"MB {size_mb:.2f}"
+            return f"{size_mb:.2f} مگابایت"
         else:
             size_gb = size_mb / 1024
-            return f"GB {size_gb:.2f}"
+            return f"{size_gb:.2f} گیگابایت"
 
     async def upload_file(self, file_name, bucket_name, object_name=None):
+        logging.info(f"File {file_name} start uploading")
         if object_name is None:
             object_name = file_name
         try:
