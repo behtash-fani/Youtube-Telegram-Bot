@@ -41,7 +41,7 @@ async def cmd_start(message: Message):
     username = message.from_user.username
     await db.add_user(user_id, username)
     await message.answer_sticker("CAACAgIAAxkBAAEMNRRmVHYlX3AeIP2klFDB-7Q_bDzvJwACCgADJHFiGtSUmaRviPBGNQQ")
-    await message.answer("سلام، به پاندا دی‌ال خوش آمدید.")
+    await message.answer("سلام، به بات پاندا خوش آمدید.")
     await message.answer("لطفاً یک لینک یوتیوب ارسال کنید تا ویدیو آن را برای شما بارگذاری کنیم و لینک بدون فیلتر ارائه دهیم.")
 
 @dp.message()

@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   pandadlbot:
-    container_name: pandadlbot
+    container_name: pandadlbot-youtube
     build:
       context: .
       dockerfile: Dockerfile
