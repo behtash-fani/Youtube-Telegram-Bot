@@ -12,11 +12,8 @@ from datetime import datetime, timedelta
 from aiogram.filters import Command
 from dotenv import load_dotenv
 from database import Database
-from slugify import slugify
-import threading
 import asyncio
 import logging
-import time
 import os
 
 
@@ -124,8 +121,6 @@ async def process_playlist_callback(callback_query: types.CallbackQuery):
             await callback_query.message.answer(
                     f"دانلود با موفقیت انجام شد.\nاندازه فایل: {file_size}\nلینک دانلود: \n{download_result['file_url']}\n\nاین لینک تا ۱ ساعت معتبر است."
                 )
-            video_id = download_result['video_id']
-            title = download_result['title']
         else:
             await bot.send_message(callback_query.message.chat.id, "خطایی در دانلود ویدیو رخ داد. لطفاً مجدداً تلاش کنید.")
 

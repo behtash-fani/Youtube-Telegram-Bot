@@ -8,6 +8,7 @@ services:
       dockerfile: Dockerfile
     volumes:
       - ./src:/app/src
+      - ./downloads:/app/downloads
     working_dir: /app/src
     command: python main.py
     environment:
@@ -15,3 +16,12 @@ services:
     ports:
       - "8000:8000"
     restart: always
+
+  nginx:
+    build: ./nginx
+    container_name: nginx
+    restart: always
+    ports:
+      - "80:80"
+    volumes:
+      - ./downloads:/usr/share/nginx/html/downloads
