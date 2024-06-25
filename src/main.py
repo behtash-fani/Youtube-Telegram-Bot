@@ -3,18 +3,24 @@ from yt_dl import (
     is_valid_youtube_url,
     download_video,
     is_youtube_playlist,
-    get_playlist_videos
+    get_playlist_videos,
+    format_filesize
 )
 from aiogram.utils.keyboard import InlineKeyboardBuilder
-from aiogram.types import Message, CallbackQuery
-from aiogram import Bot, Dispatcher
+from aiogram import Bot, Dispatcher, types
+from datetime import datetime, timedelta
 from aiogram.filters import Command
 from dotenv import load_dotenv
-from bucket_tool import bucket
 from database import Database
+from slugify import slugify
+import threading
 import asyncio
 import logging
+import time
 import os
+
+
+
 
 # Load environment variables
 load_dotenv()
@@ -28,24 +34,24 @@ if not API_TOKEN:
     raise ValueError("No API_TOKEN provided")
 
 # Initialize bot and dispatcher
-loop = asyncio.new_event_loop()
-asyncio.set_event_loop(loop)
 bot = Bot(token=API_TOKEN)
-dp = Dispatcher(loop=loop)
+dp = Dispatcher()
 
 db = Database("bot_database.db")
 
 @dp.message(Command(commands=["start"]))
-async def cmd_start(message: Message):
+async def cmd_start(message: types.Message):
     user_id = message.from_user.id
     username = message.from_user.username
     await db.add_user(user_id, username)
+    await db.add_download_time_column()
     await message.answer_sticker("CAACAgIAAxkBAAEMNRRmVHYlX3AeIP2klFDB-7Q_bDzvJwACCgADJHFiGtSUmaRviPBGNQQ")
     await message.answer("سلام، به بات پاندا خوش آمدید.")
     await message.answer("لطفاً یک لینک یوتیوب ارسال کنید تا ویدیو آن را برای شما بارگذاری کنیم و لینک بدون فیلتر ارائه دهیم.")
 
+
 @dp.message()
-async def get_youtube_link(message: Message):
+async def get_youtube_link(message: types.Message):
     user_id = message.from_user.id
 
     if not await db.user_exists(user_id):
@@ -97,8 +103,9 @@ async def get_youtube_link(message: Message):
 
     await message.answer("لطفاً کیفیت مورد نظر را انتخاب کنید:", reply_markup=builder.as_markup())
 
+
 @dp.callback_query(lambda callback_query: callback_query.data.startswith('pl_'))
-async def process_playlist_callback(callback_query: CallbackQuery):
+async def process_playlist_callback(callback_query: types.CallbackQuery):
     callback_data = callback_query.data
     data_parts = callback_data.split('_')
     playlist_id = data_parts[1]
@@ -113,17 +120,14 @@ async def process_playlist_callback(callback_query: CallbackQuery):
             await callback_query.message.answer(f"📝 عنوان ویدیو:\n\n `{download_result['title']}`", parse_mode="Markdown")
             await callback_query.message.answer(f"🖼 کاور ویدیو:")
             await bot.send_photo(callback_query.message.chat.id, download_result['cover_url'])  # ارسال کاور ویدیو
-            file_size = await bucket.get_object_detail(download_result['file_name'])
+            file_size = format_filesize(os.path.getsize(download_result['file_path']))
             await callback_query.message.answer(
                     f"دانلود با موفقیت انجام شد.\nاندازه فایل: {file_size}\nلینک دانلود: \n{download_result['file_url']}\n\nاین لینک تا ۱ ساعت معتبر است."
                 )
-            # await bot.send_message(callback_query.message.chat.id, f"ویدیو با موفقیت دانلود و بارگذاری شد.\nلینک: \n{result['file_url']}")
             video_id = download_result['video_id']
-            title = download_result['title']  # اضافه کردن عنوان ویدیو
-            await db.add_or_update_youtube_link(user_id, video_id, title, 'completed')
+            title = download_result['title']
         else:
             await bot.send_message(callback_query.message.chat.id, "خطایی در دانلود ویدیو رخ داد. لطفاً مجدداً تلاش کنید.")
-            await db.add_or_update_youtube_link(user_id, video_id, '', 'failed')
 
     await callback_query.message.answer("✅ تمام ویدیوهای پلی‌لیست با موفقیت دانلود شدند.")
     await callback_query.message.answer("لطفاً ربات ما را به دوستان خود معرفی کنید.\n@pandadl_youtube_bot")
@@ -131,7 +135,7 @@ async def process_playlist_callback(callback_query: CallbackQuery):
 
 
 @dp.callback_query(lambda callback_query: callback_query.data.startswith('vid__'))
-async def process_video_callback(callback_query: CallbackQuery):
+async def process_video_callback(callback_query: types.CallbackQuery):
     callback_data = callback_query.data
     data_parts = callback_data.split('__')
     video_id = data_parts[1]
@@ -147,59 +151,45 @@ async def process_video_callback(callback_query: CallbackQuery):
     download_result = await download_video(youtube_url, format_id, resolution, user_id, file_type)
 
     if download_result['status'] == 'success':
-        file_size = await bucket.get_object_detail(download_result['file_name'])
+        file_size = format_filesize(os.path.getsize(download_result['file_path']))
         await callback_query.message.answer(
                 f"دانلود با موفقیت انجام شد.\nاندازه فایل: {file_size}\nلینک دانلود: \n{download_result['file_url']}\n\nاین لینک تا ۱ ساعت معتبر است."
             )
-        await db.add_or_update_youtube_link(user_id, video_id, download_result['title'], 'completed')
         await callback_query.message.answer("لطفاً ربات ما را به دوستان خود معرفی کنید.\n@pandadl_youtube_bot")
         await callback_query.message.answer_sticker("CAACAgIAAxkBAAEMNSFmVH2EBvyPvxadOMIK7AuPgcIdpgACEQADJHFiGg4fi9EJ5yBPNQQ")
     else:
-        await db.add_or_update_youtube_link(user_id, video_id, '', 'failed')
         await callback_query.message.answer("مشکلی در دانلود فایل پیش آمد. لطفاً دوباره تلاش کنید.")
-        await callback_query.message.answer_sticker("CAACAgIAAxkBAAEMNSNmVH3HK8IM8ZO0akF2FdirwHnP-wACEAADJHFiGpr6FCbQRHAxNQQ")
+        await callback_query.message.answer_sticker("CAACAgIAAxkBAAEMNZRmVILd3EPlGr5_Kebmlh0RXvCg8AACIAADJHFiGkH36EVv-c3oNQQ")
 
-@dp.callback_query()
-async def download_video_callback(callback_query: CallbackQuery):
-    await bot.answer_callback_query(callback_query.id)
-    try:
-        data = callback_query.data.split('__')
-        video_id = data[0]
-        video_url = f'https://www.youtube.com/watch?v={video_id}'
-        format_id = data[1]
-        resolution = data[2]
-        user_id = data[3]
 
-        if not await db.user_exists(user_id):
-            await callback_query.message.answer("ابتدا دستور /start را بزنید.")
-            return
 
-        await db.update_link_status(user_id, video_id, 'pending')
+async def delete_old_files(download_path, db):
+    cutoff_time = datetime.now() - timedelta(hours=1)
+    query = "SELECT user_id, video_id, title, file_path FROM youtube_links WHERE download_time < ?"
+    
+    async def get_old_files():
+        return await db.execute_query_with_result(query, (cutoff_time,))
+    
+    old_files = await get_old_files()
+    for file in old_files:
+        user_id, video_id, title, file_path = file
+        try:
+            if file_path is not None:
+                os.remove(file_path)
+                await db.add_or_update_youtube_link(user_id=user_id, video_id=video_id,title=title, status='deleted')
+        except FileNotFoundError:
+            continue
 
-        if format_id.startswith('bestaudio'):
-            file_type = 'audio'
-            await callback_query.message.answer("فایل صوتی در حال دانلود است.")
-        else:
-            file_type = 'video'
-            await callback_query.message.answer("فایل ویدیویی در حال دانلود است.")
+async def run_delete_files_periodically(download_path, db):
+    while True:
+        await delete_old_files(download_path, db)
+        await asyncio.sleep(300)
 
-        download_result = await download_video(video_url, format_id, resolution, user_id, file_type)
+async def main():
+    db = Database("bot_database.db")
+    download_path = "/downloads"
+    asyncio.create_task(run_delete_files_periodically(download_path, db))
+    await dp.start_polling(bot)
 
-        if download_result['status'] == 'success':
-            file_size = await bucket.get_object_detail(download_result['file_name'])
-            await db.update_link_status(user_id, video_id, 'success')
-            await callback_query.message.answer(
-                
-            )
-            await callback_query.message.answer("لطفاً ربات ما را به دوستان خود معرفی کنید.\n@pandadl_youtube_bot")
-            await callback_query.message.answer_sticker("CAACAgIAAxkBAAEMNSFmVH2EBvyPvxadOMIK7AuPgcIdpgACEQADJHFiGg4fi9EJ5yBPNQQ")
-        else:
-            await db.update_link_status(user_id, video_id, 'fail')
-            await callback_query.message.answer("مشکلی در دانلود فایل پیش آمد. لطفاً دوباره تلاش کنید.")
-            await callback_query.message.answer_sticker("CAACAgIAAxkBAAEMNSNmVH3HK8IM8ZO0akF2FdirwHnP-wACEAADJHFiGpr6FCbQRHAxNQQ")
-    except Exception as e:
-        logging.error(f"Unexpected error: {e}")
-        await callback_query.message.answer("مشکلی در پردازش درخواست شما پیش آمد. لطفاً دوباره تلاش کنید.")
-
-if __name__ == '__main__':
-    asyncio.run(dp.start_polling(bot, skip_updates=True))
+if __name__ == "__main__":
+    asyncio.run(main())
