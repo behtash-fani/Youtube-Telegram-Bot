@@ -183,7 +183,7 @@ async def download_video(
     cover_url = video_details['cover_url']
     title = slugify(video_details['title'], allow_unicode=True)
 
-    download_path = f'downloads/{user_id}'
+    download_path = f'../downloads/{user_id}'
     os.makedirs(download_path, exist_ok=True)
 
     delete_existing_files(download_path, video_id)
@@ -243,11 +243,7 @@ async def download_video(
         logging.error(f"File {full_file_path} does not exist")
         return {'status': 'failed'}
 
-    if type == 'audio':
-        file_url = f'https://pandabot.ir/{user_id}/{file_name}'
-    else:
-        file_url = f'https://pandabot.ir/{user_id}/{file_name}'
-
+    file_url = f'https://pandabot.ir/dls/{user_id}/{file_name}'
     await db.add_or_update_youtube_link(user_id, video_id, video_details['title'], extension, 'downloaded', full_file_path)
     return {
         'status': 'success',
