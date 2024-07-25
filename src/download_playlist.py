@@ -68,6 +68,7 @@ async def process_playlist_callback(callback_query: types.CallbackQuery, bot: Bo
 
     video_urls, _ = await get_playlist_videos(playlist_url)
     for video_url in video_urls:
+        await callback_query.message.answer(f"در حال دانلود ویدیو بعدی ...")
         download_result = await download_video(video_url, None, resolution, user_id, 'video')
         if download_result['status'] == 'success':
             await callback_query.message.answer(f"📝 عنوان ویدیو:\n\n `{download_result['title']}`", parse_mode="Markdown")

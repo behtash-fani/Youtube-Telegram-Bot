@@ -183,7 +183,7 @@ async def download_video(
     cover_url = video_details['cover_url']
     title = slugify(video_details['title'], allow_unicode=True)
 
-    download_path = f'../downloads/{user_id}'
+    download_path = f'./downloads/{user_id}'
     os.makedirs(download_path, exist_ok=True)
 
     delete_existing_files(download_path, video_id)

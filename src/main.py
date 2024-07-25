@@ -125,8 +125,7 @@ async def main():
     A function that initializes the database, sets the download path, and starts polling the bot.
     """
     db = Database("bot_database.db")
-    download_path = "/downloads"
-    asyncio.create_task(run_delete_files_periodically(download_path, db))
+    asyncio.create_task(run_delete_files_periodically(db))
     await dp.start_polling(bot)
 
 if __name__ == "__main__":
