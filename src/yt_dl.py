@@ -6,6 +6,11 @@ import asyncio
 import yt_dlp
 import re
 import os
+from dotenv import load_dotenv
+
+
+load_dotenv()
+DOWNLOAD_DIR = os.getenv('DOWNLOAD_DIR')
 
 db = Database('bot_database.db')
 
@@ -183,7 +188,7 @@ async def download_video(
     cover_url = video_details['cover_url']
     title = slugify(video_details['title'], allow_unicode=True)
 
-    download_path = f'./downloads/{user_id}'
+    download_path = f'{DOWNLOAD_DIR}{user_id}'
     os.makedirs(download_path, exist_ok=True)
 
     delete_existing_files(download_path, video_id)
