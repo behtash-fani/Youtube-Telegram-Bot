@@ -54,10 +54,10 @@ async def process_playlist_callback(callback_query: types.CallbackQuery, bot: Bo
 
     video_urls, _ = await get_playlist_videos(playlist_url)
     for video_number, video_url in enumerate(video_urls, start=1):
-        def message_text(video_number): return (
-            f"دانلود پلی‌لیست با کیفیت {resolution} آغاز شد.\nلطفاً صبر کنید..."
+        message_text = lambda video_number: (
+            f"دانلود ویدیوها با کیفیت {resolution} آغاز شد.\nلطفاً صبر کنید..."
             if video_number == 1 else "در حال دانلود ویدیو بعدی ..."
-        )
+            )
         try:
             # Send initial or updated message
             waiting_message = await callback_query.message.answer(message_text(video_number))
@@ -75,7 +75,7 @@ async def process_playlist_callback(callback_query: types.CallbackQuery, bot: Bo
                     )
                     file_size = format_filesize(
                         os.path.getsize(download_result['file_path']))
-                    main_caption = f"📝 عنوان ویدیو:\n {download_result['title']}\n\n🔗 لینک دانلود ({file_size}): \n{download_result['file_url']}\n\n⚠️ این لینک تا 1 ساعت معتبر است."
+                    main_caption = f"📝 عنوان ویدیو:\n {download_result['title']}\n\n🔗 لینک دانلود ({file_size} - {resolution}): \n{download_result['file_url']}\n\n⚠️ این لینک تا 1 ساعت معتبر است."
                     if video_number == len(video_urls):
                         await callback_query.message.answer_photo(
                             download_result['cover_url'],
