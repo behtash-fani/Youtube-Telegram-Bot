@@ -40,7 +40,21 @@ async def cmd_start(message: types.Message):
     await db.add_user(user_id, username)
     await db.add_download_time_column()
     await message.answer_sticker("CAACAgIAAxkBAAEMNRRmVHYlX3AeIP2klFDB-7Q_bDzvJwACCgADJHFiGtSUmaRviPBGNQQ")
-    await message.answer("سلام، به بات پاندا خوش آمدید.")
+    await message.answer(
+    "سلام، به بات پاندا خوش آمدید.\n\n"
+    "یک لینک ویدیو یا لینک پلی‌لیست یوتیوب ارسال کنید:\n"
+    "------------------------\n"
+    "*⚠️ راهنمای استفاده از ربات:*\n"
+    "/help",
+    parse_mode="Markdown"
+)
+
+
+@dp.message(Command(commands=["help"]))
+async def cmd_termsofuse(message: types.Message):
+    """
+    Handle the /help command. Send a message to the user with the terms of use for using the YouTube downloader bot.
+    """
     await message.answer(
             "*برای استفاده از ربات دانلودر یوتیوب، لطفاً نکات زیر را رعایت کنید:*\n"
             "**لینک‌های مجاز:**\n"
@@ -54,8 +68,7 @@ async def cmd_start(message: types.Message):
             "`https://www.youtube.com/playlist?list=WL`\n\n"
             "*درضمن میتوانید یک فایل متنی با پسوند txt بسازید و در هر خط یکی از لینک های بالا را قرار دهید و آنرا برای ربات ارسال کنید.*\n\n"
             "*نتیجه استفاده از ربات:*\n"
-            "پس از ارسال لینک مجاز، ربات ویدیو یا پلی‌لیست را دانلود کرده و لینک مستقیم دانلود از سرور با دامنه `pandabot.ir` را در اختیار شما قرار می‌دهد.\n\n"
-            "موفق باشید! 🌟",
+            "پس از ارسال لینک مجاز، ربات ویدیو یا پلی‌لیست را دانلود کرده و لینک مستقیم دانلود از سرور با دامنه `pandabot.ir` را در اختیار شما قرار می‌دهد.\n\n",
             parse_mode="Markdown"
             )
 
