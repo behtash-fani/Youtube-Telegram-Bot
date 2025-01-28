@@ -54,13 +54,12 @@ def is_youtube_playlist(url: str) -> bool:
     return bool(playlist_pattern.match(url))
 
 
-async def get_video_details(video_url: str, cookies_file: str = None) -> Dict[str, Any]:
+async def get_video_details(video_url: str) -> Dict[str, Any]:
     """
     Retrieves details of a video from a given video URL.
 
     Args:
         video_url (str): The URL of the video.
-        cookies_file (str, optional): Path to a cookies file. Defaults to None.
 
     Returns:
         dict: A dictionary containing the video title, cover URL, formats, and video ID.
@@ -69,9 +68,6 @@ async def get_video_details(video_url: str, cookies_file: str = None) -> Dict[st
         'format': 'bestvideo+bestaudio/best',
         'noplaylist': True,
     }
-
-    if cookies_file:
-        ydl_opts['cookiefile'] = cookies_file
         
     loop = asyncio.get_event_loop()
     info_dict = await loop.run_in_executor(None, lambda: yt_dlp.YoutubeDL(ydl_opts).extract_info(video_url, download=False))

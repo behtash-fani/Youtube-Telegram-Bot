@@ -1,3 +1,4 @@
+version: '3'
 services:
   pandabot:
     container_name: panda-youtube
@@ -21,5 +22,7 @@ services:
     restart: always
     ports:
       - "80:80"
+    environment:
+      - DOMAIN_NAME=${DOMAIN}
     volumes:
       - ./downloads:/usr/share/nginx/html/downloads

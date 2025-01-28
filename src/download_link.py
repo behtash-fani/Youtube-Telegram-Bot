@@ -30,7 +30,7 @@ async def handle_youtube_link(message: types.Message, youtube_url: str) -> None:
             f"✅ {translate(language, 'The link is valid.')}\n\n" \
             f"{translate(language, 'Please wait a few moments for the video details to be displayed.')}"
             )
-        video_details = await get_video_details(youtube_url, cookies_file="cookies.txt")
+        video_details = await get_video_details(youtube_url)
         video_id = video_details['video_id']
         title = video_details['title']
 
