@@ -3,9 +3,9 @@ from yt_dl import get_video_details, download_video, is_valid_youtube_url, forma
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 import os
 import logging
+from utils import get_user_language, translate
 
 logging.basicConfig(level=logging.INFO)
-
 async def handle_youtube_link(message: types.Message, youtube_url: str) -> None:
     """
     This async function handles a YouTube link provided in a message.
@@ -20,21 +20,26 @@ async def handle_youtube_link(message: types.Message, youtube_url: str) -> None:
         None
     """
     user_id = message.from_user.id
+    language = await get_user_language(user_id)
     try:
         if not is_valid_youtube_url(youtube_url):
-            await message.answer("لطفاً یک لینک معتبر از یوتیوب ارسال کنید.")
+            await message.answer(f"{translate(language, 'Please enter a valid YouTube link.')}")
             return
-
-        verify_message = await message.answer("✅ لینک معتبر است.\n\nلطفاً چند لحظه صبر کنید تا اطلاعات ویدیو به شما نمایش داده شود.")
-        video_details = await get_video_details(youtube_url)
+            _("Please enter a valid YouTube link.")
+        verify_message = await message.answer(
+            f"✅ {translate(language, 'The link is valid.')}\n\n" \
+            f"{translate(language, 'Please wait a few moments for the video details to be displayed.')}"
+            )
+        video_details = await get_video_details(youtube_url, cookies_file="cookies.txt")
         video_id = video_details['video_id']
         title = video_details['title']
 
         builder = InlineKeyboardBuilder()
         builder.max_width = 2
+        caption_message = f"📝 {translate(language, 'Video Title')}:\n {title}\n\n{translate(language, 'Please choose your preferred quality:')}"
         button_selection_message = await message.answer_photo(
             video_details['cover_url'],
-            caption=f"📝 عنوان ویدیو:\n {title}\n\nلطفاً کیفیت مورد نظر را انتخاب کنید:",
+            caption = caption_message,
             reply_markup=builder.as_markup()
             )
 
@@ -43,8 +48,6 @@ async def handle_youtube_link(message: types.Message, youtube_url: str) -> None:
                 button_text = f"🎬 {fmt['resolution']} - {fmt['extension'].upper()}"
                 callback_data = f"vid__{video_id}__{fmt['format_id']}__{fmt['resolution']}__{user_id}__{button_selection_message.message_id}"
                 builder.button(text=button_text, callback_data=callback_data)
-
-        # if video_details['cover_url'].endswith('.jpg'):
         
         await button_selection_message.edit_reply_markup(reply_markup=builder.as_markup())
 
@@ -67,12 +70,14 @@ async def process_video_callback(callback_query: types.CallbackQuery,bot: Bot):
     youtube_url: str = f'https://www.youtube.com/watch?v={video_id}'
     video_details = await get_video_details(youtube_url)
     title = video_details['title']
+    audio_verify_message = f"{translate(language, 'Download audio file with quality')} {resolution} {translate(language, 'started.')}\n{translate(language, 'Please wait...')}"
+    video_verify_message = f"{translate(language, 'Download video with quality')} {resolution} {translate(language, 'started.')}\n{translate(language, 'Please wait...')}"
     if resolution in ['128kbps', '320kbps']:
         file_type: str = 'audio'
-        verify_message = await callback_query.message.answer(f"دانلود فایل صوتی با کیفیت {resolution} آغاز شد.\nلطفا صبر کنید...")
+        verify_message = await callback_query.message.answer(audio_verify_message)
     else:
         file_type: str = 'video'
-        verify_message = await callback_query.message.answer(f"دانلود ویدیو با کیفیت {resolution} آغاز شد.\nلطفا صبر کنید...")
+        verify_message = await callback_query.message.answer(video_verify_message)
 
     download_result: dict = await download_video(
         youtube_url, format_id, resolution, user_id, file_type)
@@ -88,11 +93,18 @@ async def process_video_callback(callback_query: types.CallbackQuery,bot: Bot):
             chat_id=callback_query.message.chat.id,
             message_id=button_selection_message_id
         )
+        caption = f"📝 {translate(language, 'Video Title')}:\n {title}\n\n🔗 {translate(language, 'Download Link')} ({file_size} - {resolution}): \n\n⚠️ {translate(language, 'This link is valid for 1 hour.')}" \
+            f"\n\n🪧 {translate(language, 'Please recommend our bot to your friends.')}\n@panda_youtube_bot"
         await callback_query.message.answer_photo(
             video_details['cover_url'],
-            caption=f"📝 عنوان ویدیو:\n {title}\n\n🔗 لینک دانلود ({file_size} - {resolution}): \n{download_result['file_url']}\n\n⚠️ این لینک تا 1 ساعت معتبر است.\n\n🪧 لطفاً ربات ما را به دوستان خود معرفی کنید.\n@panda_youtube_bot",
+            caption=caption)
+        await callback_query.message.answer_sticker(
+            "CAACAgIAAxkBAAEMNSFmVH2EBvyPvxadOMIK7AuPgcIdpgACEQADJHFiGg4fi9EJ5yBPNQQ"
             )
-        await callback_query.message.answer_sticker("CAACAgIAAxkBAAEMNSFmVH2EBvyPvxadOMIK7AuPgcIdpgACEQADJHFiGg4fi9EJ5yBPNQQ")
     else:
-        await callback_query.message.answer("مشکلی در دانلود فایل پیش آمد. لطفاً دوباره تلاش کنید.")
-        await callback_query.message.answer_sticker("CAACAgIAAxkBAAEMNZRmVILd3EPlGr5_Kebmlh0RXvCg8AACIAADJHFiGkH36EVv-c3oNQQ")
+        await callback_query.message.answer(
+            translate(language, "An error occurred while downloading the file. Please try again.")
+        )
+        await callback_query.message.answer_sticker(
+            "CAACAgIAAxkBAAEMNZRmVILd3EPlGr5_Kebmlh0RXvCg8AACIAADJHFiGkH36EVv-c3oNQQ"
+            )

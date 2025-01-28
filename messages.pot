@@ -1,0 +1,224 @@
+# Translations template for PROJECT.
+# Copyright (C) 2025 ORGANIZATION
+# This file is distributed under the same license as the PROJECT project.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2025.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PROJECT VERSION\n"
+"Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
+"POT-Creation-Date: 2025-01-28 15:52+0330\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.16.0\n"
+
+#: src/download_link.py:27
+msgid "Please enter a valid YouTube link."
+msgstr "لطفاً یک لینک معتبر از یوتیوب وارد کنید."
+
+#: src/download_link.py:31
+msgid "The link is valid."
+msgstr "لینک معتبر است."
+
+#: src/download_link.py:32
+msgid "Please wait a few moments for the video details to be displayed."
+msgstr "لطفاً چند لحظه منتظر بمانید تا جزئیات ویدیو نمایش داده شود."
+
+#: src/download_link.py:40 src/download_link.py:103
+msgid "Video Title"
+msgstr "عنوان ویدیو"
+
+#: src/download_link.py:41
+msgid "Please choose your preferred quality:"
+msgstr "لطفاً کیفیت مورد نظر خود را انتخاب کنید:"
+
+#: src/download_link.py:77
+msgid "Download audio file with quality"
+msgstr "دانلود فایل صوتی با کیفیت"
+
+#: src/download_link.py:78
+msgid "Download video with quality"
+msgstr "دانلود ویدیو با کیفیت"
+
+#: src/download_link.py:79 src/process_file_links.py:119
+msgid "Please wait..."
+msgstr "لطفاً صبر کنید..."
+
+#: src/download_link.py:104 src/download_playlist.py:106
+#: src/process_file_links.py:140
+msgid "Download Link"
+msgstr "لینک دانلود"
+
+#: src/download_link.py:105 src/download_playlist.py:107
+#: src/process_file_links.py:141
+msgid "This link is valid for 1 hour."
+msgstr "این لینک به مدت یک ساعت معتبر است."
+
+#: src/download_link.py:106 src/download_playlist.py:109
+#: src/process_file_links.py:166
+msgid "Please recommend our bot to your friends."
+msgstr "لطفاً ربات ما را به دوستان خود معرفی کنید."
+
+#: src/download_link.py:117
+msgid "An error occurred while downloading the file. Please try again."
+msgstr "هنگام دانلود فایل خطایی رخ داد. لطفاً دوباره تلاش کنید."
+
+#: src/download_playlist.py:24
+msgid "Please wait a moment. The playlist is being processed..."
+msgstr "لطفاً چند لحظه صبر کنید. لیست پخش در حال پردازش است..."
+
+#: src/download_playlist.py:36
+msgid "An error occurred while processing the playlist. Please try again."
+msgstr "هنگام پردازش لیست پخش خطایی رخ داد. لطفاً دوباره تلاش کنید."
+
+#: src/download_playlist.py:50
+msgid "Number of videos in the playlist:"
+msgstr "تعداد ویدیوهای موجود در لیست پخش:"
+
+#: src/download_playlist.py:51
+msgid "Please choose the download quality for all videos"
+msgstr "لطفاً کیفیت دانلود برای تمام ویدیوها را انتخاب کنید"
+
+#: src/download_playlist.py:77 src/process_file_links.py:118
+msgid "Downloading videos with quality"
+msgstr "در حال دانلود ویدیوها با کیفیت"
+
+#: src/download_playlist.py:78
+msgid "Please wait.."
+msgstr "لطفاً صبر کنید.."
+
+#: src/download_playlist.py:81 src/process_file_links.py:122
+msgid "Downloading the next video..."
+msgstr "در حال دانلود ویدیوی بعدی..."
+
+#: src/download_playlist.py:105 src/process_file_links.py:139
+msgid "Video Title:"
+msgstr "عنوان ویدیو:"
+
+#: src/download_playlist.py:108
+msgid "All videos in the playlist have been successfully downloaded."
+msgstr "همه ویدیوهای موجود در لیست پخش با موفقیت دانلود شدند."
+
+#: src/download_playlist.py:119
+msgid "Error deleting message or sending photo"
+msgstr "خطا در حذف پیام یا ارسال عکس"
+
+#: src/download_playlist.py:122 src/process_file_links.py:156
+msgid "An error occurred while downloading the video. Please try again."
+msgstr "هنگام دانلود ویدیو خطایی رخ داد. لطفاً دوباره تلاش کنید."
+
+#: src/main.py:74
+msgid "Hello, welcome to Panda Bot!"
+msgstr "سلام، به ربات پاندا خوش آمدید!"
+
+#: src/main.py:75 src/main.py:98
+msgid "Send a YouTube video or playlist link:"
+msgstr "یک لینک ویدیوی یوتیوب یا لیست پخش ارسال کنید:"
+
+#: src/main.py:76 src/main.py:99
+msgid "Bot usage guide:"
+msgstr "راهنمای استفاده از ربات:"
+
+#: src/main.py:131
+msgid "To use the YouTube downloader bot, please follow these guidelines:"
+msgstr "برای استفاده از ربات دانلود یوتیوب، لطفاً این دستورالعمل‌ها را دنبال کنید:"
+
+#: src/main.py:132
+msgid "Allowed links:"
+msgstr "لینک‌های مجاز:"
+
+#: src/main.py:133
+msgid "Regular YouTube video links:"
+msgstr "لینک‌های عادی ویدیوهای یوتیوب:"
+
+#: src/main.py:134 src/main.py:137
+msgid "Example:"
+msgstr "مثال:"
+
+#: src/main.py:135
+msgid "or:"
+msgstr "یا:"
+
+#: src/main.py:136
+msgid "YouTube playlist links:"
+msgstr "لینک‌های لیست پخش یوتیوب:"
+
+#: src/main.py:138
+msgid "Disallowed links:"
+msgstr "لینک‌های غیرمجاز:"
+
+#: src/main.py:139
+msgid ""
+"You can also create a text file with the txt extension and put one of the"
+" above links on each line and send it to the bot."
+msgstr ""
+"شما همچنین می‌توانید یک فایل متنی با فرمت txt ایجاد کنید و یکی از لینک‌های"
+" فوق را در هر خط قرار دهید و آن را برای ربات ارسال کنید."
+
+#: src/main.py:140
+msgid "Result of using the bot:"
+msgstr "نتیجه استفاده از ربات:"
+
+#: src/main.py:141
+msgid ""
+"After sending an allowed link, the bot will download the video or "
+"playlist and provide you with a direct download link from the server with"
+" the domain `pandabot.ir`."
+msgstr ""
+"پس از ارسال یک لینک مجاز، ربات ویدیو یا لیست پخش را دانلود کرده و یک لینک"
+" دانلود مستقیم از سرور با دامنه `pandabot.ir` به شما ارائه می‌دهد."
+
+#: src/main.py:185
+msgid ""
+"The link you sent is related to WatchLater. Currently, we cannot handle "
+"videos in this link"
+msgstr ""
+"لینکی که ارسال کردید مربوط به WatchLater است. در حال حاضر نمی‌توانیم ویدیوهای این لینک را پردازش کنیم."
+
+#: src/main.py:186 src/main.py:195
+msgid "Please send a single video or playlist link"
+msgstr "لطفاً یک لینک ویدیو یا لیست پخش ارسال کنید."
+
+#: src/main.py:194
+msgid ""
+"The link you sent is related to Liked Videos. Currently, we cannot handle"
+" videos in this link"
+msgstr ""
+"لینکی که ارسال کردید مربوط به ویدیوهای لایک‌شده است. در حال حاضر نمی‌توانیم ویدیوهای این لینک را پردازش کنیم."
+
+#: src/process_file_links.py:70
+msgid "Number of correct links sent:"
+msgstr "تعداد لینک‌های درست ارسال شده:"
+
+#: src/process_file_links.py:71
+msgid "Please choose the download quality for all videos:"
+msgstr "لطفاً کیفیت دانلود برای تمام ویدیوها را انتخاب کنید:"
+
+#: src/process_file_links.py:80
+msgid "Please make sure to send a file with a .txt extension."
+msgstr "لطفاً مطمئن شوید که فایلی با فرمت .txt ارسال می‌کنید."
+
+#: src/process_file_links.py:105
+msgid "No download link was found."
+msgstr "هیچ لینک دانلودی یافت نشد."
+
+#: src/process_file_links.py:106
+msgid "Please resend the file with a .txt extension."
+msgstr "لطفاً فایل را با فرمت .txt دوباره ارسال کنید."
+
+#: src/process_file_links.py:165
+msgid "All download links are ready for use in download manager software."
+msgstr "همه لینک‌های دانلود آماده استفاده در نرم‌افزار مدیریت دانلود هستند."
+
+#: src/yt_dl.py:288
+msgid "MB"
+msgstr "مگابایت"
+
+#: src/yt_dl.py:293
+msgid "GB"
+msgstr "گیگابایت"

@@ -2,6 +2,7 @@ from aiogram import types
 from yt_dl import get_playlist_videos, download_video, format_filesize
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram import Bot
+from utils import get_user_language, translate
 import os
 import logging
 
@@ -17,14 +18,20 @@ async def handle_youtube_playlist(message: types.Message, youtube_url: str) -> N
         youtube_url (str): The YouTube playlist URL.
     """
     # Notify the user that the playlist is being processed
-    waiting_message = await message.answer("لطفاً کمی صبر کنید. پلی‌لیست در حال پردازش است...")
+    user_id = message.from_user.id
+    language = await get_user_language(user_id)
+    waiting_message = await message.answer(
+        f'{translate(language, "Please wait a moment. The playlist is being processed...")}'
+        )
 
     # Get the video URLs and playlist ID from the playlist
     video_urls, playlist_id = await get_playlist_videos(youtube_url)
 
     # If no video URLs are returned, display an error message and return
     if not video_urls:
-        await message.answer("خطایی در پردازش پلی‌لیست رخ داد. لطفاً مجدداً تلاش کنید.")
+        await message.answer(
+            f'{translate(language, "An error occurred while processing the playlist. Please try again.")}'
+        )
         return
     await message.bot.delete_message(
         chat_id=message.chat.id,
@@ -34,7 +41,10 @@ async def handle_youtube_playlist(message: types.Message, youtube_url: str) -> N
     # Create a keyboard with options for different video resolutions
     resolutions = ["480p", "720p", "1080p"]
     builder = InlineKeyboardBuilder()
-    button_selection_message = await message.answer(f"✅ تعداد ویدیوهای پلی لیست: {len(video_urls)} عدد.\n\nلطفا کیفیت دانلود را برای همه ویدیوها انتخاب کنید", reply_markup=builder.as_markup())
+    button_selection_message = await message.answer(
+        f'✅ {translate(language, "Number of videos in the playlist:")} {len(video_urls)}\n\n {translate(language, "Please choose the download quality for all videos")}',
+        reply_markup=builder.as_markup()
+        )
     for res in resolutions:
         # Create a callback data for each resolution
         callback_data = f'pl_{playlist_id}_{res}_{message.from_user.id}_{button_selection_message.message_id}'
@@ -53,11 +63,15 @@ async def process_playlist_callback(callback_query: types.CallbackQuery, bot: Bo
     playlist_url = f'https://www.youtube.com/playlist?list={playlist_id}'
 
     video_urls, _ = await get_playlist_videos(playlist_url)
+    language = await get_user_language(user_id)
     for video_number, video_url in enumerate(video_urls, start=1):
         message_text = lambda video_number: (
-            f"دانلود ویدیوها با کیفیت {resolution} آغاز شد.\nلطفاً صبر کنید..."
-            if video_number == 1 else "در حال دانلود ویدیو بعدی ..."
-            )
+            translate(
+                language,
+                f'{translate(language, "Downloading videos with quality")} {resolution} {translate(language, "started.")}\n{translate(language, "Please wait..")}.'
+                )
+            if video_number == 1 
+            else translate(language, "Downloading the next video..."))
         try:
             # Send initial or updated message
             waiting_message = await callback_query.message.answer(message_text(video_number))
@@ -75,11 +89,17 @@ async def process_playlist_callback(callback_query: types.CallbackQuery, bot: Bo
                     )
                     file_size = format_filesize(
                         os.path.getsize(download_result['file_path']))
-                    main_caption = f"📝 عنوان ویدیو:\n {download_result['title']}\n\n🔗 لینک دانلود ({file_size} - {resolution}): \n{download_result['file_url']}\n\n⚠️ این لینک تا 1 ساعت معتبر است."
+                    main_caption = f"📝 {translate(language, 'Video Title:')}\n" \
+                                f"{download_result['title']}\n\n" \
+                                f"🔗 {translate(language, 'Download Link')} ({file_size} - {resolution}): \n " \
+                                f"{download_result['file_url']}\n\n" \
+                                f"⚠️ {translate(language, 'This link is valid for 1 hour.')}"
                     if video_number == len(video_urls):
                         await callback_query.message.answer_photo(
                             download_result['cover_url'],
-                            caption=f"{main_caption}\n\n✅ تمام ویدیوهای پلی‌لیست با موفقیت دانلود شدند.\n\n🪧 لطفاً ربات ما را به دوستان خود معرفی کنید.\n@panda_youtube_bot",
+                            caption=f"{main_caption}\n\n"
+                            f"✅ {translate(language, 'All videos in the playlist have been successfully downloaded.')}\n\n" \
+                                f"🪧 {translate(language, 'Please recommend our bot to your friends.')}\n@panda_youtube_bot",
                         )
                         await callback_query.message.answer_sticker("CAACAgIAAxkBAAEMNSFmVH2EBvyPvxadOMIK7AuPgcIdpgACEQADJHFiGg4fi9EJ5yBPNQQ")
                     else:
@@ -91,8 +111,10 @@ async def process_playlist_callback(callback_query: types.CallbackQuery, bot: Bo
                     logging.error(
                         f"Error deleting message or sending photo: {e}")
             else:
-                await bot.send_message(callback_query.message.chat.id, "خطایی در دانلود ویدیو رخ داد. لطفاً مجدداً تلاش کنید.")
-
+                await bot.send_message(
+                    callback_query.message.chat.id, 
+                    f'{translate(language, "An error occurred while downloading the video. Please try again.")}'
+                    )
         except Exception as e:
             logging.error(f"Error processing video {video_number}: {e}")
     

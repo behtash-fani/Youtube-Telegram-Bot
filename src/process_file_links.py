@@ -3,6 +3,7 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 from yt_dl import download_video, format_filesize
 from aiogram.types import FSInputFile
 from aiogram import types, Bot
+from utils import get_user_language, translate
 import logging
 import shutil
 import os
@@ -24,7 +25,7 @@ async def handle_file_links(message: types.Message, bot: Bot) -> None:
     """
     document = message.document
     user_id = message.from_user.id
-
+    language = await get_user_language(user_id)
     # Check if the file is a text file
     if document.mime_type == 'text/plain' and document.file_name.endswith('.txt'):
 
@@ -62,9 +63,10 @@ async def handle_file_links(message: types.Message, bot: Bot) -> None:
         resolutions = ["480p", "720p", "1080p"]
         builder = InlineKeyboardBuilder()
         button_selection_message = await message.answer(
-                                            f"✅ تعداد لینک های صحیح ارسال شده: {count_currect_links} عدد \n\nلطفا کیفیت دانلود را برای همه ویدیوها انتخاب کنید:", 
-                                            reply_markup=builder.as_markup()
-                                            )
+            translate(
+                language, f"✅ Number of correct links sent: {count_currect_links}.\n\nPlease choose the download quality for all videos:"
+                ), reply_markup=builder.as_markup()
+            )
         for res in resolutions:
             callback_data = f'file_{res}_{message.from_user.id}_{button_selection_message.message_id}'
             builder.button(text=f'🎬 {res} - MP4', callback_data=callback_data[:64])
@@ -72,8 +74,7 @@ async def handle_file_links(message: types.Message, bot: Bot) -> None:
         builder.adjust(2)
         await button_selection_message.edit_reply_markup(reply_markup=builder.as_markup())
     else:
-        await message.reply("لطفا حتما فایلی با پسوند .txt ارسال کنید.")
-
+        await message.reply(translate(language, "Please make sure to send a file with a .txt extension."))
 async def process_file_links_callback(callback_query: types.CallbackQuery, bot: Bot) -> None:
     """
     Process the callback query for file links.
@@ -89,14 +90,14 @@ async def process_file_links_callback(callback_query: types.CallbackQuery, bot: 
     callback_data = callback_query.data
     data_parts = callback_data.split('_')
     resolution, user_id, button_selection_message_id = data_parts[1], data_parts[2], int(data_parts[3])
-
+    language = await get_user_language(user_id)
     # Constructing directory path
     links_dir = f'links/{user_id}'
 
     # Checking if the file with correct links exists
     if not os.path.exists(f'{links_dir}/currect_links.txt'):
-        await callback_query.message.answer("لینکی برای دانلود یافت نشد")
-        await callback_query.message.answer("لطفا فایل با پسوند txt را مجدد ارسال کنید")
+        await callback_query.message.answer(translate(language, "No download link was found."))
+        await callback_query.message.answer(translate(language, "Please resend the file with a .txt extension."))
         return
 
     # Downloading videos
@@ -105,9 +106,9 @@ async def process_file_links_callback(callback_query: types.CallbackQuery, bot: 
             os.remove(f'{links_dir}/dl_links.txt')
         for line_number, line in enumerate(new_file, start=1):
             message_text = lambda video_number: (
-            f"دانلود ویدیوها با کیفیت {resolution} آغاز شد.\nلطفاً صبر کنید..."
-            if line_number == 1 else "در حال دانلود ویدیو بعدی ..."
-            )
+                f"{translate(language, 'Downloading videos with quality')} {resolution} {translate(language, 'started.')}\n{translate(language, 'Please wait...')}."
+            if line_number == 1 
+            else translate(language, "Downloading the next video..."))
             with open(f'{links_dir}/dl_links.txt', 'a+') as download_file:
                 waiting_message = await callback_query.message.answer(message_text(line_number))
                 download_result = await download_video(line, None, resolution, user_id, 'video')
@@ -123,9 +124,10 @@ async def process_file_links_callback(callback_query: types.CallbackQuery, bot: 
                         message_id=waiting_message.message_id
                         )
                         file_size = format_filesize(os.path.getsize(download_result['file_path']))
+                        caption_message = f"📝 {translate(language, 'Video Title:')}\n {download_result['title']}\n\n🔗 {translate(language, 'Download Link')} ({file_size} - {resolution}): \n{download_result['file_url']}\n\n⚠️ {translate(language, 'This link is valid for 1 hour.')}"
                         await callback_query.message.answer_photo(
                             download_result['cover_url'],
-                            caption=f"📝 عنوان ویدیو:\n{download_result['title']}n\n\n🔗 لینک دانلود ({file_size} - {resolution}): \n{download_result['file_url']}\n\n⚠️ این لینک تا 1 ساعت معتبر است.",
+                            caption= caption_message,
                         )
                         # Sending file size and download link
                         download_file.write(f"{download_result['file_url']}\n")
@@ -133,11 +135,21 @@ async def process_file_links_callback(callback_query: types.CallbackQuery, bot: 
                         logging.error(f"Error deleting message or sending photo: {e}")
                     
                 else:
-                    await bot.send_message(callback_query.message.chat.id, "خطایی در دانلود ویدیو رخ داد. لطفاً مجدداً تلاش کنید.")
+                    await bot.send_message(
+                        callback_query.message.chat.id, 
+                        translate(language, "An error occurred while downloading the video. Please try again.")
+                        )
+                    _("An error occurred while downloading the video. Please try again.")
         text_file = FSInputFile(f'{links_dir}/dl_links.txt')
         await callback_query.message.answer_document(
             text_file, 
-            caption=f"✅ تمام لینک های دانلود برای استفاده در نرم افزارهای دانلود فایل\n\nلطفاً ربات ما را به دوستان خود معرفی کنید.\n@panda_youtube_bot")
+            caption=f"✅ All download links are ready for use in download manager software.\n\nPlease recommend our bot to your friends.\n@panda_youtube_bot")
+        await callback_query.message.answer_document(
+            text_file,
+            f"✅ {translate(language, 'All download links are ready for use in download manager software.')}\n\n{translate(language, 'Please recommend our bot to your friends.')}\n@panda_youtube_bot"
+            )
+        _("All download links are ready for use in download manager software.")
+        _("Please recommend our bot to your friends.")
         await callback_query.message.answer_sticker("CAACAgIAAxkBAAEMNSFmVH2EBvyPvxadOMIK7AuPgcIdpgACEQADJHFiGg4fi9EJ5yBPNQQ")
         # Cleaning up
         shutil.rmtree(links_dir)

@@ -25,7 +25,8 @@ class Database:
                 CREATE TABLE IF NOT EXISTS users (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     user_id INTEGER NOT NULL,
-                    username TEXT
+                    username TEXT,
+                    language TEXT
                 )
             ''')
             cursor.execute('''
@@ -43,29 +44,31 @@ class Database:
             ''')
             conn.commit()
 
-    async def add_user(self, user_id: int, username: str) -> None:
+    async def add_user(self, user_id: int, username: str, language: str) -> None:
         """
         Add a new user to the database asynchronously if the user does not already exist.
 
         :param user_id: The ID of the user.
         :param username: The username of the user.
+        :param language: The user's preferred language.
         """
         if not await self.user_exists(user_id):
             loop = asyncio.get_running_loop()
-            await loop.run_in_executor(self.executor, self._add_user, user_id, username)
+            await loop.run_in_executor(self.executor, self._add_user, user_id, username, language)
 
-    def _add_user(self, user_id: int, username: str) -> None:
+    def _add_user(self, user_id: int, username: str, language: str) -> None:
         """
         Synchronously add a new user to the database.
 
         :param user_id: The ID of the user.
         :param username: The username of the user.
+        :param language: The user's preferred language.
         """
         with sqlite3.connect(self.db_name) as conn:
             cursor = conn.cursor()
             cursor.execute('''
-                INSERT INTO users (user_id, username) VALUES (?, ?)
-            ''', (user_id, username))
+                INSERT INTO users (user_id, username, language) VALUES (?, ?, ?)
+            ''', (user_id, username, language))
             conn.commit()
 
     async def user_exists(self, user_id: int) -> bool:
@@ -219,3 +222,54 @@ class Database:
             cursor.execute(query, params)
             results = cursor.fetchall()
             return results
+
+    async def save_user_config(self, user_id: int, language: str) -> None:
+        """
+        Save the user's language preference asynchronously.
+
+        :param user_id: The ID of the user.
+        :param language: The language preference to save.
+        """
+        loop = asyncio.get_running_loop()
+        await loop.run_in_executor(self.executor, self._save_user_config, user_id, language)
+
+    def _save_user_config(self, user_id: int, language: str) -> None:
+        """
+        Synchronously save the user's language preference.
+
+        :param user_id: The ID of the user.
+        :param language: The language preference to save.
+        """
+        with sqlite3.connect(self.db_name) as conn:
+            cursor = conn.cursor()
+            cursor.execute('''
+                UPDATE users SET language = ? WHERE user_id = ?
+            ''', (language, user_id))
+            conn.commit()
+            
+    async def get_user_config(self, user_id: int) -> dict:
+        """
+        Fetch the user's configuration (e.g., language) from the database.
+
+        :param user_id: The ID of the user.
+        :return: A dictionary containing the user's configuration.
+        """
+        loop = asyncio.get_running_loop()
+        return await loop.run_in_executor(self.executor, self._get_user_config, user_id)
+
+    def _get_user_config(self, user_id: int) -> dict:
+        """
+        Synchronously fetch the user's configuration from the database.
+
+        :param user_id: The ID of the user.
+        :return: A dictionary containing the user's configuration.
+        """
+        with sqlite3.connect(self.db_name) as conn:
+            cursor = conn.cursor()
+            cursor.execute('''
+                SELECT language FROM users WHERE user_id = ?
+            ''', (user_id,))
+            result = cursor.fetchone()
+            if result:
+                return {"language": result[0]}
+            return {"language": "en"}  # Default to English if no configuration is found
