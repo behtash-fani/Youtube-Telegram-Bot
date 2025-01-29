@@ -12,6 +12,7 @@ from utils import translate, get_user_language
 
 load_dotenv()
 DOWNLOAD_DIR = os.getenv('DOWNLOAD_DIR')
+DOMAIN = os.getenv('DOMAIN')
 
 db = Database('bot_database.db')
 
@@ -249,7 +250,7 @@ async def download_video(
         logging.error(f"File {full_file_path} does not exist")
         return {'status': 'failed'}
 
-    file_url = f'https://pandabot.ir/dls/{user_id}/{file_name}'
+    file_url = f'https://{DOMAIN}/dls/{user_id}/{file_name}'
     await db.add_or_update_youtube_link(user_id, video_id, video_details['title'], extension, 'downloaded', full_file_path)
     return {
         'status': 'success',
