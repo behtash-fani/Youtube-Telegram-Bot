@@ -46,6 +46,10 @@ msgstr "دانلود فایل صوتی با کیفیت"
 msgid "Download video with quality"
 msgstr "دانلود ویدیو با کیفیت"
 
+#: src/download_link.py:78
+msgid "started"
+msgstr "شروع شد"
+
 #: src/download_link.py:79 src/process_file_links.py:119
 msgid "Please wait..."
 msgstr "لطفاً صبر کنید..."

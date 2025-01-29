@@ -7,6 +7,7 @@ import yt_dlp
 import re
 import os
 from dotenv import load_dotenv
+from utils import translate, get_user_language
 
 
 load_dotenv()
@@ -261,7 +262,7 @@ async def download_video(
     }
 
 
-def format_filesize(filesize: int) -> str:
+async def format_filesize(user_id, filesize: int) -> str:
     """
     Format the size of a file in a human-readable format.
 
@@ -272,6 +273,7 @@ def format_filesize(filesize: int) -> str:
         str: The formatted size of the file in megabytes or gigabytes.
     """
     # If the filesize is None, return 'N/A'.
+    language = await get_user_language(user_id)
     if filesize is None:
         return 'N/A'
 

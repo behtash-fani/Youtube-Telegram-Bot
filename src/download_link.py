@@ -70,8 +70,9 @@ async def process_video_callback(callback_query: types.CallbackQuery,bot: Bot):
     youtube_url: str = f'https://www.youtube.com/watch?v={video_id}'
     video_details = await get_video_details(youtube_url)
     title = video_details['title']
-    audio_verify_message = f"{translate(language, 'Download audio file with quality')} {resolution} {translate(language, 'started.')}\n{translate(language, 'Please wait...')}"
-    video_verify_message = f"{translate(language, 'Download video with quality')} {resolution} {translate(language, 'started.')}\n{translate(language, 'Please wait...')}"
+    language = await get_user_language(user_id)
+    audio_verify_message = f"{translate(language, 'Download audio file with quality')} {resolution} {translate(language, 'started')}.\n{translate(language, 'Please wait...')}"
+    video_verify_message = f"{translate(language, 'Download video with quality')} {resolution} {translate(language, 'started')}.\n{translate(language, 'Please wait...')}"
     if resolution in ['128kbps', '320kbps']:
         file_type: str = 'audio'
         verify_message = await callback_query.message.answer(audio_verify_message)
@@ -83,8 +84,7 @@ async def process_video_callback(callback_query: types.CallbackQuery,bot: Bot):
         youtube_url, format_id, resolution, user_id, file_type)
 
     if download_result['status'] == 'success':
-        file_size: str = format_filesize(
-            os.path.getsize(download_result['file_path']))
+        file_size: str = await format_filesize(user_id, os.path.getsize(download_result['file_path']))
         await callback_query.message.bot.delete_message(
             chat_id=callback_query.message.chat.id,
             message_id=verify_message.message_id
@@ -93,7 +93,7 @@ async def process_video_callback(callback_query: types.CallbackQuery,bot: Bot):
             chat_id=callback_query.message.chat.id,
             message_id=button_selection_message_id
         )
-        caption = f"📝 {translate(language, 'Video Title')}:\n {title}\n\n🔗 {translate(language, 'Download Link')} ({file_size} - {resolution}): \n\n⚠️ {translate(language, 'This link is valid for 1 hour.')}" \
+        caption = f"📝 {translate(language, 'Video Title')}:\n {title}\n\n🔗 {translate(language, 'Download Link')} ({file_size} - {resolution}): \n{download_result['file_url']}\n\n⚠️ {translate(language, 'This link is valid for 1 hour.')}" \
             f"\n\n🪧 {translate(language, 'Please recommend our bot to your friends.')}\n@panda_youtube_bot"
         await callback_query.message.answer_photo(
             video_details['cover_url'],

@@ -225,27 +225,26 @@ class Database:
 
     async def save_user_config(self, user_id: int, language: str) -> None:
         """
-        Save the user's language preference asynchronously.
-
-        :param user_id: The ID of the user.
-        :param language: The language preference to save.
+        Save or update the user's language preference.
         """
         loop = asyncio.get_running_loop()
         await loop.run_in_executor(self.executor, self._save_user_config, user_id, language)
 
     def _save_user_config(self, user_id: int, language: str) -> None:
         """
-        Synchronously save the user's language preference.
-
-        :param user_id: The ID of the user.
-        :param language: The language preference to save.
+        Synchronously save or update the user's language preference.
         """
         with sqlite3.connect(self.db_name) as conn:
             cursor = conn.cursor()
             cursor.execute('''
                 UPDATE users SET language = ? WHERE user_id = ?
             ''', (language, user_id))
+            if cursor.rowcount == 0:  # If no update happened, insert the user
+                cursor.execute('''
+                    INSERT INTO users (user_id, language) VALUES (?, ?)
+                ''', (user_id, language))
             conn.commit()
+
             
     async def get_user_config(self, user_id: int) -> dict:
         """
@@ -258,18 +257,16 @@ class Database:
         return await loop.run_in_executor(self.executor, self._get_user_config, user_id)
 
     def _get_user_config(self, user_id: int) -> dict:
-        """
-        Synchronously fetch the user's configuration from the database.
-
-        :param user_id: The ID of the user.
-        :return: A dictionary containing the user's configuration.
-        """
         with sqlite3.connect(self.db_name) as conn:
+            # print(f"Fetching config for user_id: {user_id} (type: {type(user_id)})")
+            # print(f"Using database file: {self.db_name}")
+            
             cursor = conn.cursor()
-            cursor.execute('''
-                SELECT language FROM users WHERE user_id = ?
-            ''', (user_id,))
+            cursor.execute('''SELECT language FROM users WHERE user_id = ?''', (user_id,))
             result = cursor.fetchone()
+            
+            # print(f"Query result: {result}")
+            
             if result:
                 return {"language": result[0]}
-            return {"language": "en"}  # Default to English if no configuration is found
+            return {"language": "en"}

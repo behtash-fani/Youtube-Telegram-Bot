@@ -87,7 +87,8 @@ async def process_playlist_callback(callback_query: types.CallbackQuery, bot: Bo
                         chat_id=callback_query.message.chat.id,
                         message_id=waiting_message.message_id
                     )
-                    file_size = format_filesize(
+                    file_size = await format_filesize(
+                        user_id,
                         os.path.getsize(download_result['file_path']))
                     main_caption = f"📝 {translate(language, 'Video Title:')}\n" \
                                 f"{download_result['title']}\n\n" \

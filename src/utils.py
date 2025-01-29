@@ -1,5 +1,5 @@
 from database import Database
-from gettext import translation
+from gettext import translation, install
 import logging
 import os
 
@@ -8,17 +8,20 @@ db = Database("bot_database.db")
 
 # Load translations
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-LOCALES_DIR = f"{BASE_DIR}/locales"
+LOCALES_DIR = os.path.join(BASE_DIR, "locales")
+
 try:
     TRANSLATIONS = {
-        "en": translation("messages", localedir=LOCALES_DIR, languages=["en"]),
-        "fa": translation("messages", localedir=LOCALES_DIR, languages=["fa"]),
+        "en": translation("messages", localedir=LOCALES_DIR, languages=["en"], fallback=True),
+        "fa": translation("messages", localedir=LOCALES_DIR, languages=["fa"], fallback=True),
     }
     logging.info("Translations loaded successfully.")
 except Exception as e:
     logging.error(f"Error loading translations: {e}")
     TRANSLATIONS = {}
 
+# Default to English
+TRANSLATIONS.get("en", translation("messages", localedir=LOCALES_DIR, languages=["en"], fallback=True)).install()
 
 def set_language(language_code: str):
     """Set the active translation language."""
@@ -26,12 +29,11 @@ def set_language(language_code: str):
         TRANSLATIONS[language_code].install()
     else:
         TRANSLATIONS["en"].install()
+        logging.warning(f"Language {language_code} not found. Defaulting to English.")
 
 def translate(language_code: str, message: str) -> str:
     """Translate a message to the specified language."""
-    if language_code in TRANSLATIONS:
-        return TRANSLATIONS[language_code].gettext(message)
-    return message
+    return TRANSLATIONS.get(language_code, TRANSLATIONS["en"]).gettext(message)
 
 async def get_user_language(user_id: int, default_language: str = "en") -> str:
     """Retrieve the user's language preference from the database."""

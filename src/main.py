@@ -42,11 +42,11 @@ async def cmd_start(message: types.Message):
 
     # Get user's preferred language from the database
     user_lang = await get_user_language(user_id)
+    if not await db.user_exists(user_id):
+        await db.add_user(user_id, username, language=None)
+        await db.add_download_time_column()
+    set_language("en")
     if user_lang not in ["fa", "en"]:  # If no language is set, show the language selection buttons
-        # Add user to the database with no language preference
-        if not await db.user_exists(user_id):
-            await db.add_user(user_id, username, language=None)
-            await db.add_download_time_column()
 
         # Show language selection buttons
         builder = InlineKeyboardBuilder()
@@ -78,17 +78,36 @@ async def handle_language_callback(callback_query: types.CallbackQuery):
     """
     Handle the language selection callback.
     """
-    await callback_query.answer()
     language = callback_query.data.split('_')[1]
     user_id = callback_query.from_user.id
 
     # Save the user's language preference
     await db.save_user_config(user_id, language)
+    set_language(language)
     sending_link_message = f'{translate(language, "Send a YouTube video or playlist link:")} \n\n' \
             f'------------------------\n' \
             f'⚠️ {translate(language, "Bot usage guide:")}\n' \
             f'/help'
     await callback_query.message.edit_text(sending_link_message, parse_mode="Markdown")
+
+@dp.message(Command(commands=["change_language"]))
+async def cmd_language(message: types.Message):
+    """
+    Handle the /language command. Toggle the user's language between English and Farsi.
+    """
+    user_id = message.from_user.id
+    current_language = await get_user_language(user_id)
+
+    # Determine the new language
+    new_language = "fa" if current_language == "en" else "en"
+
+    # Save the new language preference
+    await db.save_user_config(user_id, new_language)
+    set_language(new_language)
+
+    # Notify the user of the language change
+    confirmation_message = f'✅ زبان ربات به فارسی تغییر کرد!' if new_language == 'fa' else f'✅ Bot language changed to English'
+    await message.answer(confirmation_message)
 
 
 @dp.message(Command(commands=["help"]))
