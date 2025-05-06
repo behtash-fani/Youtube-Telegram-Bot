@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   pandabot:
     container_name: panda-youtube
@@ -13,6 +11,8 @@ services:
     command: python main.py
     environment:
       - API_TOKEN=${API_TOKEN}
+    env_file:
+      - .env
     ports:
       - "8000:8000"
     restart: unless-stopped
@@ -22,8 +22,12 @@ services:
     container_name: nginx
     restart: always
     ports:
-      - "80:80"
+      - "8080:8080"
     depends_on:
       - pandabot
+    environment:
+      - DOMAIN_NAME=${DOMAIN}
+    env_file:
+      - .env
     volumes:
       - ./downloads:/usr/share/nginx/html/downloads
