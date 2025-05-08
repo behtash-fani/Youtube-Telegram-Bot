@@ -10,6 +10,7 @@ async def get_user_keyboard(user_id: int) -> ReplyKeyboardMarkup:
     """Returns the appropriate keyboard based on user login status."""
     language = await db.get_user_lang(user_id)
     set_language(language)
+    buttons = []
     if language == "fa":
         # Define the buttons in Persian
         buttons = [
