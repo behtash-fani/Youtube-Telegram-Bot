@@ -5,6 +5,7 @@ from typing import Any, List, Tuple
 from db.botdb_schema import initialize_db
 import os
 from tools.logger import logger
+import csv
 
 class BotDB:
     def __init__(self) -> None:
@@ -133,6 +134,21 @@ class BotDB:
         result = cursor.fetchone()[0]
         conn.close()
         return result
+    
+    def save_table_to_csv(self, table_name: str, file_name: str) -> None:
+        conn = self._get_connection()
+        cursor = conn.cursor()
+        cursor.execute(f"SELECT * FROM {table_name}")
+        rows = cursor.fetchall()
+        columns = [description[0] for description in cursor.description]
+        
+        # ذخیره داده‌ها به فایل CSV
+        with open(file_name, mode='w', encoding='utf-8', newline='') as f:
+            writer = csv.writer(f)
+            writer.writerow(columns)  # نوشتن نام ستون‌ها در سطر اول
+            writer.writerows(rows)
+        conn.close()
+        logger.info(f"✅ Data from table {table_name} saved to {file_name}")
 
 
 
