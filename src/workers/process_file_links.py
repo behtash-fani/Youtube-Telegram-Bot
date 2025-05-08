@@ -1,28 +1,23 @@
-from yt_dl import is_valid_youtube_url, is_youtube_playlist, get_playlist_videos
+from workers.yt_dl import (
+    is_valid_youtube_url, 
+    is_youtube_playlist, 
+    get_playlist_videos,
+    download_video,
+    format_filesize
+    )
 from aiogram.utils.keyboard import InlineKeyboardBuilder
-from yt_dl import download_video, format_filesize
 from aiogram.types import FSInputFile
-from aiogram import types, Bot
-from utils import get_user_language, translate
-import logging
+from aiogram import types, Bot, Router
+from tools.translation import translate, get_user_language
+from tools.logger import logger
 import shutil
 import os
+from config import API_TOKEN
 
-logging.basicConfig(level=logging.INFO)
+bot = Bot(token=API_TOKEN)
+router = Router()
 
-
-async def handle_file_links(message: types.Message, bot: Bot) -> None:
-    """
-    Handle an incoming file from a user.
-
-    Args:
-        message (types.Message): The message containing the file.
-        bot (types.Bot): The bot object.
-
-    Returns:
-        None
-
-    """
+async def handle_file_links(message: types.Message) -> None:
     document = message.document
     user_id = message.from_user.id
     language = await get_user_language(user_id)
@@ -48,7 +43,11 @@ async def handle_file_links(message: types.Message, bot: Bot) -> None:
             with open(file_dir, 'r') as f:
                 for line in f.readlines():
                     # Check if the link is a playlist
-                    if is_youtube_playlist(line.strip()):
+                    if 'list=WL' in line or 'list=RD' in line or 'list=history' in line:
+                        line = line.split('&list=')[0]
+                        new_file.write(line + '\n')
+                        count_currect_links += 1
+                    elif is_youtube_playlist(line.strip()):
                         youtube_links, playlist_id = await get_playlist_videos(line.strip())
                         for yt_links in youtube_links:
                             new_file.write(yt_links + '\n')
@@ -75,18 +74,9 @@ async def handle_file_links(message: types.Message, bot: Bot) -> None:
         await button_selection_message.edit_reply_markup(reply_markup=builder.as_markup())
     else:
         await message.reply(translate(language, "Please make sure to send a file with a .txt extension."))
-async def process_file_links_callback(callback_query: types.CallbackQuery, bot: Bot) -> None:
-    """
-    Process the callback query for file links.
 
-    Args:
-        callback_query (types.CallbackQuery): The callback query object.
-        bot (types.Bot): The bot object.
-
-    Returns:
-        None
-    """
-    # Extracting data from callback query
+@router.callback_query(lambda callback_query: callback_query.data.startswith('file_'))
+async def process_file_links_callback(callback_query: types.CallbackQuery) -> None:
     callback_data = callback_query.data
     data_parts = callback_data.split('_')
     resolution, user_id, button_selection_message_id = data_parts[1], data_parts[2], int(data_parts[3])
@@ -123,7 +113,7 @@ async def process_file_links_callback(callback_query: types.CallbackQuery, bot: 
                         chat_id=callback_query.message.chat.id,
                         message_id=waiting_message.message_id
                         )
-                        file_size = format_filesize(os.path.getsize(download_result['file_path']))
+                        file_size = await format_filesize(user_id, os.path.getsize(download_result['file_path']))
                         caption_message = f"📝 {translate(language, 'Video Title:')}\n {download_result['title']}\n\n🔗 {translate(language, 'Download Link')} ({file_size} - {resolution}): \n{download_result['file_url']}\n\n⚠️ {translate(language, 'This link is valid for 1 hour.')}"
                         await callback_query.message.answer_photo(
                             download_result['cover_url'],
@@ -132,7 +122,7 @@ async def process_file_links_callback(callback_query: types.CallbackQuery, bot: 
                         # Sending file size and download link
                         download_file.write(f"{download_result['file_url']}\n")
                     except Exception as e:
-                        logging.error(f"Error deleting message or sending photo: {e}")
+                        logger.error(f"Error deleting message or sending photo: {e}")
                     
                 else:
                     await bot.send_message(

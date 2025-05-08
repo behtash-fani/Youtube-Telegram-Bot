@@ -1,23 +1,16 @@
-from aiogram import types
-from yt_dl import get_playlist_videos, download_video, format_filesize
+from aiogram import types, Router
+from workers.yt_dl import get_playlist_videos, download_video, format_filesize
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram import Bot
-from utils import get_user_language, translate
+from tools.translation import translate, get_user_language
 import os
-import logging
+from tools.logger import logger
 
-logging.basicConfig(level=logging.INFO)
 
+
+router = Router()
 
 async def handle_youtube_playlist(message: types.Message, youtube_url: str) -> None:
-    """
-    Handle a YouTube playlist link provided in a message.
-
-    Args:
-        message (types.Message): The message containing the YouTube playlist link.
-        youtube_url (str): The YouTube playlist URL.
-    """
-    # Notify the user that the playlist is being processed
     user_id = message.from_user.id
     language = await get_user_language(user_id)
     waiting_message = await message.answer(
@@ -55,8 +48,9 @@ async def handle_youtube_playlist(message: types.Message, youtube_url: str) -> N
     builder.adjust(2)
     await button_selection_message.edit_reply_markup(reply_markup=builder.as_markup())
 
-async def process_playlist_callback(callback_query: types.CallbackQuery, bot: Bot) -> None:
-    callback_data = callback_query.data
+@router.callback_query(lambda c: c.data.startswith('pl_'))
+async def process_playlist_callback(callback: types.CallbackQuery, bot: Bot) -> None:
+    callback_data = callback.data
     data_parts = callback_data.split('_')
     playlist_id = data_parts[1]
     resolution, user_id, button_selection_message_id = data_parts[2], data_parts[3], int(data_parts[4])
@@ -74,17 +68,17 @@ async def process_playlist_callback(callback_query: types.CallbackQuery, bot: Bo
             else translate(language, "Downloading the next video..."))
         try:
             # Send initial or updated message
-            waiting_message = await callback_query.message.answer(message_text(video_number))
+            waiting_message = await callback.message.answer(message_text(video_number))
             download_result = await download_video(video_url, None, resolution, user_id, 'video')
             if download_result['status'] == 'success':
                 try:
                     if video_number == 1:
-                        await callback_query.message.bot.delete_message(
-                                chat_id=callback_query.message.chat.id,
+                        await callback.message.bot.delete_message(
+                                chat_id=callback.message.chat.id,
                                 message_id=button_selection_message_id
                             )
-                    await callback_query.message.bot.delete_message(
-                        chat_id=callback_query.message.chat.id,
+                    await callback.message.bot.delete_message(
+                        chat_id=callback.message.chat.id,
                         message_id=waiting_message.message_id
                     )
                     file_size = await format_filesize(
@@ -96,26 +90,26 @@ async def process_playlist_callback(callback_query: types.CallbackQuery, bot: Bo
                                 f"{download_result['file_url']}\n\n" \
                                 f"⚠️ {translate(language, 'This link is valid for 1 hour.')}"
                     if video_number == len(video_urls):
-                        await callback_query.message.answer_photo(
+                        await callback.message.answer_photo(
                             download_result['cover_url'],
                             caption=f"{main_caption}\n\n"
                             f"✅ {translate(language, 'All videos in the playlist have been successfully downloaded.')}\n\n" \
                                 f"🪧 {translate(language, 'Please recommend our bot to your friends.')}\n@panda_youtube_bot",
                         )
-                        await callback_query.message.answer_sticker("CAACAgIAAxkBAAEMNSFmVH2EBvyPvxadOMIK7AuPgcIdpgACEQADJHFiGg4fi9EJ5yBPNQQ")
+                        await callback.message.answer_sticker("CAACAgIAAxkBAAEMNSFmVH2EBvyPvxadOMIK7AuPgcIdpgACEQADJHFiGg4fi9EJ5yBPNQQ")
                     else:
-                        await callback_query.message.answer_photo(
+                        await callback.message.answer_photo(
                             download_result['cover_url'],
                             caption=f"{main_caption}"
                         )
                 except Exception as e:
-                    logging.error(
+                    logger.error(
                         f"Error deleting message or sending photo: {e}")
             else:
                 await bot.send_message(
-                    callback_query.message.chat.id, 
+                    callback.message.chat.id, 
                     f'{translate(language, "An error occurred while downloading the video. Please try again.")}'
                     )
         except Exception as e:
-            logging.error(f"Error processing video {video_number}: {e}")
+            logger.error(f"Error processing video {video_number}: {e}")
     

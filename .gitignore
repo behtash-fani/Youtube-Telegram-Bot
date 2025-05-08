@@ -116,3 +116,6 @@ local_settings.py
 
 # database
 *.db
+links
+logs
+database

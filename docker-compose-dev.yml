@@ -9,7 +9,7 @@ services:
       - ./downloads:/app/downloads
       - ./database:/app/database
     working_dir: /app/src
-    command: python main.py
+    command: watchmedo auto-restart --pattern=*.py --recursive -- python -m main
     environment:
       - API_TOKEN=${API_TOKEN}
     env_file:

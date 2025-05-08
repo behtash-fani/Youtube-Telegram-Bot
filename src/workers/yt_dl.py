@@ -1,5 +1,5 @@
 from typing import Dict, Union, Any
-from database import Database
+from db.database import BotDB
 from slugify import slugify
 import logging
 import asyncio
@@ -7,27 +7,14 @@ import yt_dlp
 import re
 import os
 from dotenv import load_dotenv
-from utils import translate, get_user_language
+from tools.translation import translate, get_user_language
+from config import DOWNLOAD_DIR, DOMAIN
 
 
-load_dotenv()
-DOWNLOAD_DIR = os.getenv('DOWNLOAD_DIR')
-DOMAIN = os.getenv('DOMAIN')
-
-db = Database('bot_database.db')
+db = BotDB()
 
 
 def is_valid_youtube_url(video_url: str) -> bool:
-    """
-    Check if a given URL is a valid YouTube URL.
-
-    Args:
-        video_url (str): The URL to check.
-
-    Returns:
-        bool: True if the URL is a valid YouTube URL, False otherwise.
-    """
-    # Regex pattern to match YouTube URLs
     youtube_regex = re.compile(
         r'^(https?://)?(www\.)?(youtube\.com|youtu\.?be)/.+$',
         re.IGNORECASE
@@ -38,17 +25,6 @@ def is_valid_youtube_url(video_url: str) -> bool:
 
 
 def is_youtube_playlist(url: str) -> bool:
-    """
-    Check if a given URL is a YouTube playlist.
-
-    Args:
-        url (str): The URL to check.
-
-    Returns:
-        bool: True if the URL is a YouTube playlist, False otherwise.
-
-    This function checks if a given URL is a YouTube playlist by matching it against a regular expression pattern. The pattern checks if the URL starts with "http://", "https://", or "www.", followed by "youtube.com" or "youtu.be", and contains the substring "list=". The function returns True if the URL matches the pattern, and False otherwise.
-    """
     playlist_pattern = re.compile(
         r'^(https?://)?(www\.)?(youtube\.com|youtu\.?be)/.*(list=).+$',
         re.IGNORECASE
@@ -57,15 +33,6 @@ def is_youtube_playlist(url: str) -> bool:
 
 
 async def get_video_details(video_url: str) -> Dict[str, Any]:
-    """
-    Retrieves details of a video from a given video URL.
-
-    Args:
-        video_url (str): The URL of the video.
-
-    Returns:
-        dict: A dictionary containing the video title, cover URL, formats, and video ID.
-    """
     ydl_opts = {
         'format': 'bestvideo+bestaudio/best',
         'noplaylist': True,
@@ -121,17 +88,6 @@ async def get_video_details(video_url: str) -> Dict[str, Any]:
 
 
 async def get_playlist_videos(playlist_url: str) -> tuple:
-    """
-    Retrieve the videos from a YouTube playlist.
-
-    Args:
-        playlist_url (str): The URL of the playlist.
-
-    Returns:
-        tuple: A tuple containing a list of video URLs and the playlist ID.
-               If the playlist contains no videos, returns an empty list and None for the playlist ID.
-    """
-    # Options for extracting videos from a playlist
     ydl_opts = {
         'extract_flat': 'in_playlist',  # Flatten the playlist into a list of videos
         'noplaylist': False,  # Include playlist information
@@ -149,8 +105,7 @@ async def get_playlist_videos(playlist_url: str) -> tuple:
     playlist_id = info_dict.get('id', None)
 
     # Extract the video URLs from the playlist entries
-    video_urls = [entry['url']
-                  for entry in info_dict['entries'] if entry.get('url')]
+    video_urls = [entry['url'] for entry in info_dict['entries'] if entry.get('url')]
 
     return video_urls, playlist_id
 
@@ -170,21 +125,6 @@ async def download_video(
     user_id: str,
     type: str
 ) -> Dict[str, Union[str, bool, Dict[str, str]]]:
-    """
-    Download a YouTube video or audio file.
-
-    Args:
-        video_url (str): The URL of the video.
-        format_id (str): The ID of the video format to download.
-        resolution (str): The resolution of the video to download.
-        user_id (str): The ID of the telegram user.
-        type (str): The type of file to download. Must be 'audio' or 'video'.
-
-    Returns:
-        Dict[str, Union[str, bool, Dict[str, str]]]: A dictionary containing the status of the download,
-        the URL of the downloaded file, the name of the file, the ID of the video, the cover URL of the video,
-        the title of the video, and the path of the downloaded file.
-    """
     video_details = await get_video_details(video_url)
     video_id = video_details['video_id']
     cover_url = video_details['cover_url']
@@ -264,16 +204,6 @@ async def download_video(
 
 
 async def format_filesize(user_id, filesize: int) -> str:
-    """
-    Format the size of a file in a human-readable format.
-
-    Args:
-        filesize (int): The size of the file in bytes.
-
-    Returns:
-        str: The formatted size of the file in megabytes or gigabytes.
-    """
-    # If the filesize is None, return 'N/A'.
     language = await get_user_language(user_id)
     if filesize is None:
         return 'N/A'

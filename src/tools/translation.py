@@ -1,23 +1,23 @@
-from database import Database
+from db.database import BotDB
 from gettext import translation, install
-import logging
+from tools.logger import logger
 import os
 
 # Initialize the database
-db = Database("bot_database.db")
+db = BotDB()
 
 # Load translations
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-LOCALES_DIR = os.path.join(BASE_DIR, "locales")
+LOCALES_DIR = os.path.join(BASE_DIR, "..", "i18n")
 
 try:
     TRANSLATIONS = {
         "en": translation("messages", localedir=LOCALES_DIR, languages=["en"], fallback=True),
         "fa": translation("messages", localedir=LOCALES_DIR, languages=["fa"], fallback=True),
     }
-    logging.info("Translations loaded successfully.")
+    logger.info("Translations loaded successfully.")
 except Exception as e:
-    logging.error(f"Error loading translations: {e}")
+    logger.error(f"Error loading translations: {e}")
     TRANSLATIONS = {}
 
 # Default to English
@@ -41,5 +41,5 @@ async def get_user_language(user_id: int, default_language: str = "en") -> str:
         user_config = await db.get_user_config(user_id)
         return user_config.get("language", default_language) if user_config else default_language
     except Exception as e:
-        logging.error(f"Error retrieving user language for user_id {user_id}: {e}")
+        logger.error(f"Error retrieving user language for user_id {user_id}: {e}")
         return default_language
