@@ -29,7 +29,7 @@ def set_language(language_code: str):
         TRANSLATIONS[language_code].install()
     else:
         TRANSLATIONS["en"].install()
-        logging.warning(f"Language {language_code} not found. Defaulting to English.")
+        logger.warning(f"Language {language_code} not found. Defaulting to English.")
 
 def translate(language_code: str, message: str) -> str:
     """Translate a message to the specified language."""
