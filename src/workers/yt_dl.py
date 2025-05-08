@@ -7,7 +7,7 @@ import yt_dlp
 import re
 import os
 from dotenv import load_dotenv
-from tools.translation import translate, get_user_language
+from tools.translation import translate
 from config import DOWNLOAD_DIR, DOMAIN
 
 
@@ -204,7 +204,7 @@ async def download_video(
 
 
 async def format_filesize(user_id, filesize: int) -> str:
-    language = await get_user_language(user_id)
+    language = await db.get_user_lang(user_id)
     if filesize is None:
         return 'N/A'
 

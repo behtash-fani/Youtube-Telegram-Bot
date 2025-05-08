@@ -1,7 +1,8 @@
-from tools.translation import get_user_language, set_language, translate
-from aiogram.filters import Command
 from aiogram.utils.keyboard import InlineKeyboardBuilder
+from tools.translation import set_language, translate
+from keyboard.keys import get_user_keyboard
 from aiogram import Router, Bot, types
+from aiogram.filters import Command
 from tools.logger import logger
 from db.database import BotDB
 
@@ -25,7 +26,7 @@ async def cmd_start(message: types.Message):
     user_lang = await get_user_language(user_id)
     if not await db.user_exists(user_id):
         await db.add_user(user_id, username, language=None)
-    set_language("en")
+    keyboard = await get_user_keyboard(user_id)
     if user_lang not in ["fa", "en"]:  # If no language is set, show the language selection buttons
 
         # Show language selection buttons
@@ -49,7 +50,7 @@ async def cmd_start(message: types.Message):
             f'------------------------\n' \
             f'*⚠️ {translate(user_lang, "Bot usage guide:")}*\n' \
             f'/help'
-        await message.answer(welcome_message, parse_mode="Markdown")
+        await message.answer(welcome_message, parse_mode="Markdown", reply_markup=keyboard)
 
 @router.callback_query(lambda callback_query: callback_query.data.startswith('lang_'))
 async def handle_language_callback(callback_query: types.CallbackQuery):

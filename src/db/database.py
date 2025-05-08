@@ -59,17 +59,16 @@ class BotDB:
             cursor.execute('''INSERT INTO users (user_id, language) VALUES (?, ?)''', (user_id, language))
         conn.commit()
 
-    async def get_user_config(self, user_id: int) -> dict:
+    async def get_user_lang(self, user_id: int) -> dict:
         loop = asyncio.get_running_loop()
-        return await loop.run_in_executor(self.executor, self._get_user_config, user_id)
+        return await loop.run_in_executor(self.executor, self._get_user_lang, user_id)
 
-    def _get_user_config(self, user_id: int) -> dict:
+    def _get_user_lang(self, user_id: int) -> dict:
         conn = self._get_connection()
         cursor = conn.cursor()
         cursor.execute('''SELECT language FROM users WHERE user_id = ?''', (user_id,))
         result = cursor.fetchone()
-        logger.info(f"User {user_id} language: {result}")
-        return {"language": result[0] if result else "en"}
+        return result[0] if result else "en"
 
     # ------------------------- YouTube Links Methods -------------------------
 
@@ -118,3 +117,22 @@ class BotDB:
         cursor = conn.cursor()
         cursor.execute(query, params)
         return cursor.fetchall()
+
+    def get_total_users(self) -> int:
+        conn = self._get_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT COUNT(DISTINCT user_id) FROM users")
+        result = cursor.fetchone()[0]
+        conn.close()
+        return result
+
+    def get_total_videos(self) -> int:
+        conn = self._get_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT COUNT(*) FROM youtube_links")
+        result = cursor.fetchone()[0]
+        conn.close()
+        return result
+
+
+

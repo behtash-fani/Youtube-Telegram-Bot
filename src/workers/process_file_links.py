@@ -8,19 +8,21 @@ from workers.yt_dl import (
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram.types import FSInputFile
 from aiogram import types, Bot, Router
-from tools.translation import translate, get_user_language
+from tools.translation import translate
 from tools.logger import logger
 import shutil
 import os
 from config import API_TOKEN
+from db.database import BotDB
 
 bot = Bot(token=API_TOKEN)
 router = Router()
+db = BotDB()
 
 async def handle_file_links(message: types.Message) -> None:
     document = message.document
     user_id = message.from_user.id
-    language = await get_user_language(user_id)
+    language = await db.get_user_lang(user_id)
     # Check if the file is a text file
     if document.mime_type == 'text/plain' and document.file_name.endswith('.txt'):
 

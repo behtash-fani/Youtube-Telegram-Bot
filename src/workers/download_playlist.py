@@ -2,17 +2,19 @@ from aiogram import types, Router
 from workers.yt_dl import get_playlist_videos, download_video, format_filesize
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram import Bot
-from tools.translation import translate, get_user_language
+from tools.translation import translate
 import os
 from tools.logger import logger
+from db.database import BotDB
 
 
 
 router = Router()
+db = BotDB()
 
 async def handle_youtube_playlist(message: types.Message, youtube_url: str) -> None:
     user_id = message.from_user.id
-    language = await get_user_language(user_id)
+    language = await db.get_user_lang(user_id)
     waiting_message = await message.answer(
         f'{translate(language, "Please wait a moment. The playlist is being processed...")}'
         )
@@ -57,7 +59,7 @@ async def process_playlist_callback(callback: types.CallbackQuery, bot: Bot) -> 
     playlist_url = f'https://www.youtube.com/playlist?list={playlist_id}'
 
     video_urls, _ = await get_playlist_videos(playlist_url)
-    language = await get_user_language(user_id)
+    language = await db.get_user_lang(user_id)
     for video_number, video_url in enumerate(video_urls, start=1):
         message_text = lambda video_number: (
             translate(

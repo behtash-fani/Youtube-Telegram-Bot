@@ -34,12 +34,3 @@ def set_language(language_code: str):
 def translate(language_code: str, message: str) -> str:
     """Translate a message to the specified language."""
     return TRANSLATIONS.get(language_code, TRANSLATIONS["en"]).gettext(message)
-
-async def get_user_language(user_id: int, default_language: str = "en") -> str:
-    """Retrieve the user's language preference from the database."""
-    try:
-        user_config = await db.get_user_config(user_id)
-        return user_config.get("language", default_language) if user_config else default_language
-    except Exception as e:
-        logger.error(f"Error retrieving user language for user_id {user_id}: {e}")
-        return default_language

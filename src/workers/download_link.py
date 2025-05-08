@@ -3,14 +3,16 @@ from workers.yt_dl import get_video_details, download_video, is_valid_youtube_ur
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 import os
 from tools.logger import logger
-from tools.translation import translate, get_user_language
+from tools.translation import translate
+from db.database import BotDB
 
 
 router = Router()
+db = BotDB()
 
 async def handle_youtube_link(message: types.Message, youtube_url: str) -> None:
     user_id = message.from_user.id
-    language = await get_user_language(user_id)
+    language = await db.get_user_lang(user_id)
     try:
         if not is_valid_youtube_url(youtube_url):
             await message.answer(f"{translate(language, 'Please enter a valid YouTube link.')}")
@@ -61,7 +63,7 @@ async def process_video_callback(callback: types.CallbackQuery):
     youtube_url: str = f'https://www.youtube.com/watch?v={video_id}'
     video_details = await get_video_details(youtube_url)
     title = video_details['title']
-    language = await get_user_language(user_id)
+    language = await db.get_user_lang(user_id)
     audio_verify_message = f"{translate(language, 'Download audio file with quality')} {resolution} {translate(language, 'started')}.\n{translate(language, 'Please wait...')}"
     video_verify_message = f"{translate(language, 'Download video with quality')} {resolution} {translate(language, 'started')}.\n{translate(language, 'Please wait...')}"
     if resolution in ['128kbps', '320kbps']:
