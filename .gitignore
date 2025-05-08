@@ -119,4 +119,4 @@ local_settings.py
 links
 logs
 database
-docker-compose-dev.yml
+/docker-compose-dev.yml
