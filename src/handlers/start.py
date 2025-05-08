@@ -23,7 +23,7 @@ async def cmd_start(message: types.Message):
     await message.answer_sticker("CAACAgIAAxkBAAEMNRRmVHYlX3AeIP2klFDB-7Q_bDzvJwACCgADJHFiGtSUmaRviPBGNQQ")
 
     # Get user's preferred language from the database
-    user_lang = await get_user_language(user_id)
+    user_lang = await db.get_user_lang(user_id)
     if not await db.user_exists(user_id):
         await db.add_user(user_id, username, language=None)
     keyboard = await get_user_keyboard(user_id)
