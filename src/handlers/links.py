@@ -4,10 +4,11 @@ from workers import download_link, download_playlist, process_file_links
 from workers.yt_dl import is_youtube_playlist
 from workers.download_link import handle_youtube_link
 from workers.download_playlist import handle_youtube_playlist
-from tools.translation import translate
+# from tools.translation import translate
 from workers.process_file_links import handle_file_links
 from config import API_TOKEN
 from tools.logger import logger
+from i18n.i18n import get_translator
 
 router = Router()
 db = BotDB()
@@ -17,6 +18,8 @@ bot = Bot(token=API_TOKEN)
 @router.message()
 async def handle_links(message: types.Message): 
     user_id = message.from_user.id
+    user_lang = await db.get_user_lang(user_id)
+    _ = get_translator(user_lang)
     if not await db.user_exists(user_id):
         await message.answer(
             "⚠️ ابتدا دستور /start را بزنید.\n\n"
@@ -32,15 +35,19 @@ async def handle_links(message: types.Message):
         youtube_url = message.text
         if 'list=WL' in youtube_url and 'watch?v=' not in youtube_url:
             await message.answer(
-                f"{translate(language, 'The link you sent is related to WatchLater. Currently, we cannot handle videos in this link')}\n" \
-                f"{translate(language, 'Please send a single video or playlist link')}"
+                # f"{translate(language, 'The link you sent is related to WatchLater. Currently, we cannot handle videos in this link')}\n" \
+                # f"{translate(language, 'Please send a single video or playlist link')}"
+                f"{_('The link you sent is related to WatchLater. Currently, we cannot handle videos in this link')}\n" \
+                f"{_('Please send a single video or playlist link')}"
             )
         elif 'list=WL' in youtube_url and 'watch?v=' in youtube_url:
             await handle_youtube_link(message, youtube_url)
         elif 'list=LL' in youtube_url and 'watch?v=' not in youtube_url:
             await message.answer(
-                f"{translate(language, 'The link you sent is related to Liked Videos. Currently, we cannot handle videos in this link')}\n" \
-                f"{translate(language, 'Please send a single video or playlist link')}"
+                # f"{translate(language, 'The link you sent is related to Liked Videos. Currently, we cannot handle videos in this link')}\n" \
+                # f"{translate(language, 'Please send a single video or playlist link')}"
+                f"{_('The link you sent is related to Liked Videos. Currently, we cannot handle videos in this link')}\n" \
+                f"{_('Please send a single video or playlist link')}"
                 )
         elif 'list=LL' in youtube_url and 'watch?v=' in youtube_url:
             await handle_youtube_link(message, youtube_url)

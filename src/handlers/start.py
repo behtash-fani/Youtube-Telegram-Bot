@@ -1,10 +1,11 @@
 from aiogram.utils.keyboard import InlineKeyboardBuilder
-from tools.translation import set_language, translate
+# from tools.translation import set_language, translate
 from keyboard.keys import get_user_keyboard
 from aiogram import Router, Bot, types
 from aiogram.filters import Command
 from tools.logger import logger
 from db.database import BotDB
+from i18n.i18n import get_translator
 
 
 db = BotDB()
@@ -18,12 +19,13 @@ async def cmd_start(message: types.Message):
     """
     user_id = message.from_user.id
     username = message.from_user.username
+    user_lang = await db.get_user_lang(user_id)
+    _ = get_translator(user_lang)
 
     # Send a sticker
     await message.answer_sticker("CAACAgIAAxkBAAEMNRRmVHYlX3AeIP2klFDB-7Q_bDzvJwACCgADJHFiGtSUmaRviPBGNQQ")
 
     # Get user's preferred language from the database
-    user_lang = await db.get_user_lang(user_id)
     if not await db.user_exists(user_id):
         await db.add_user(user_id, username, language=None)
     keyboard = await get_user_keyboard(user_id)
@@ -44,11 +46,16 @@ async def cmd_start(message: types.Message):
             reply_markup=builder.as_markup()
         )
     else:  # If language is already set, send the welcome message in the selected language
-        set_language(user_lang)
-        welcome_message = f'{translate(user_lang, "Hello, welcome to Panda Bot!")}\n\n' \
-            f'{translate(user_lang, "Send a YouTube video or playlist link:")}\n' \
+        # set_language(user_lang)
+        # welcome_message = f'{translate(user_lang, "Hello, welcome to Panda Bot!")}\n\n' \
+        #     f'{translate(user_lang, "Send a YouTube video or playlist link:")}\n' \
+        #     f'------------------------\n' \
+        #     f'*⚠️ {translate(user_lang, "Bot usage guide:")}*\n' \
+        #     f'/help'
+        welcome_message = f'{_("Hello, welcome to Panda Bot!")}\n\n' \
+            f'{_("Send a YouTube video or playlist link:")}\n' \
             f'------------------------\n' \
-            f'*⚠️ {translate(user_lang, "Bot usage guide:")}*\n' \
+            f'*⚠️ {_("Bot usage guide:")}*\n' \
             f'/help'
         await message.answer(welcome_message, parse_mode="Markdown", reply_markup=keyboard)
 
@@ -62,9 +69,8 @@ async def handle_language_callback(callback_query: types.CallbackQuery):
 
     # Save the user's language preference
     await db.save_user_config(user_id, language)
-    set_language(language)
-    sending_link_message = f'{translate(language, "Send a YouTube video or playlist link:")} \n\n' \
+    sending_link_message = f'{_("Send a YouTube video or playlist link:")} \n\n' \
             f'------------------------\n' \
-            f'⚠️ {translate(language, "Bot usage guide:")}\n' \
+            f'⚠️ {_("Bot usage guide:")}\n' \
             f'/help'
     await callback_query.message.edit_text(sending_link_message, parse_mode="Markdown")

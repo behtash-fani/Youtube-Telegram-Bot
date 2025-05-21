@@ -120,3 +120,4 @@ links
 logs
 database
 /docker-compose-dev.yml
+*.pot

@@ -1,6 +1,5 @@
 from aiogram import types, Router
 from aiogram.filters import Command
-from tools.translation import set_language, translate
 from db.database import BotDB
 from tools.logger import logger
 from keyboard.keys import get_user_keyboard
@@ -14,7 +13,6 @@ async def change_language(message: types.Message):
     current_language = await db.get_user_lang(user_id)
     new_language = "fa" if current_language == "en" else "en"
     await db.save_user_config(user_id, new_language)
-    set_language(new_language)
     keyboard = await get_user_keyboard(user_id)
 
     confirmation_message = (

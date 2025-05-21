@@ -7,8 +7,8 @@ import yt_dlp
 import re
 import os
 from dotenv import load_dotenv
-from tools.translation import translate
 from config import DOWNLOAD_DIR, DOMAIN
+from i18n.i18n import get_translator
 
 
 db = BotDB()
@@ -204,7 +204,8 @@ async def download_video(
 
 
 async def format_filesize(user_id, filesize: int) -> str:
-    language = await db.get_user_lang(user_id)
+    user_lang = await db.get_user_lang(user_id)
+    _ = get_translator(user_lang)
     if filesize is None:
         return 'N/A'
 
@@ -213,8 +214,8 @@ async def format_filesize(user_id, filesize: int) -> str:
 
     # If the size is less than 1024 megabytes, format it as megabytes.
     if size_mb < 1024:
-        return f"{size_mb:.2f} {translate(language, 'MB')}"
+        return f"{size_mb:.2f} {_('MB')}"
     # Otherwise, format it as gigabytes.
     else:
         size_gb = size_mb / 1024
-        return f"{size_gb:.2f} {translate(language, 'GB')}"
+        return f"{size_gb:.2f} {_('GB')}"

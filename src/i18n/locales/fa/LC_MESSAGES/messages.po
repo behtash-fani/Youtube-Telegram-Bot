@@ -1,0 +1,254 @@
+# Persian translations for PROJECT.
+# Copyright (C) 2025 ORGANIZATION
+# This file is distributed under the same license as the PROJECT project.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2025.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PROJECT VERSION\n"
+"Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
+"POT-Creation-Date: 2025-05-21 18:36+0330\n"
+"PO-Revision-Date: 2025-05-21 19:04+0330\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: fa\n"
+"Language-Team: Persian <fa@li.org>\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.16.0\n"
+
+#: src/handlers/help.py:34
+msgid "To use the YouTube downloader bot, please follow these guidelines:"
+msgstr "برای استفاده از ربات دانلود یوتیوب، لطفاً این دستورالعمل‌ها را دنبال کنید:"
+
+#: src/handlers/help.py:35
+msgid "Allowed links:"
+msgstr "لینک‌های مجاز:"
+
+#: src/handlers/help.py:36
+msgid "Regular YouTube video links:"
+msgstr "لینک‌های معمول ویدیوی یوتیوب:"
+
+#: src/handlers/help.py:37 src/handlers/help.py:40
+msgid "Example:"
+msgstr "مثال:"
+
+#: src/handlers/help.py:38
+msgid "or:"
+msgstr "یا:"
+
+#: src/handlers/help.py:39
+msgid "YouTube playlist links:"
+msgstr "لینک‌های پلی‌لیست یوتیوب:"
+
+#: src/handlers/help.py:41
+msgid "Disallowed links:"
+msgstr "لینک‌های غیرمجاز:"
+
+#: src/handlers/help.py:44
+msgid ""
+"You can also create a text file with the txt extension and put one of the"
+" above links on each line and send it to the bot."
+msgstr ""
+"همچنین می‌توانید یک فایل متنی با پسوند txt ایجاد کرده و در هر خط یکی از "
+"لینک‌های بالا را قرار دهید و برای ربات ارسال کنید."
+
+#: src/handlers/help.py:45
+msgid "Result of using the bot:"
+msgstr "نتیجه استفاده از ربات:"
+
+#: src/handlers/help.py:46
+msgid ""
+"After sending an allowed link, the bot will download the video or "
+"playlist and provide you with a direct download link from the server with"
+" the domain `pandabot.ir`."
+msgstr ""
+"پس از ارسال یک لینک مجاز، ربات ویدیو یا پلی‌لیست را دانلود کرده و لینکی "
+"مستقیم از سرور با دامنه `pandabot.ir` در اختیار شما قرار می‌دهد."
+
+#: src/handlers/links.py:40
+msgid ""
+"The link you sent is related to WatchLater. Currently, we cannot handle "
+"videos in this link"
+msgstr ""
+"لینکی که ارسال کردید مربوط به WatchLater است. در حال حاضر امکان پردازش "
+"این نوع لینک وجود ندارد."
+
+#: src/handlers/links.py:41 src/handlers/links.py:50
+msgid "Please send a single video or playlist link"
+msgstr "لطفاً تنها یک لینک ویدیو یا پلی‌لیست ارسال کنید."
+
+#: src/handlers/links.py:49
+msgid ""
+"The link you sent is related to Liked Videos. Currently, we cannot handle"
+" videos in this link"
+msgstr ""
+"لینکی که ارسال کردید مربوط به Liked Videos است. در حال حاضر امکان پردازش "
+"این نوع لینک وجود ندارد."
+
+#: src/handlers/other_bot.py:49
+msgid "Want to boost your Instagram followers, likes, or views?"
+msgstr "می‌خواهید فالوور، لایک یا بازدید اینستاگرام خود را افزایش دهید؟"
+
+#: src/handlers/other_bot.py:50
+msgid ""
+"With Iranigram, choose your desired service in just a few taps and see "
+"instant results!"
+msgstr ""
+"با ایرانگرام، تنها با چند کلیک سرویس مورد نظر خود را انتخاب کرده و نتیجه "
+"را فوری ببینید!"
+
+#: src/handlers/other_bot.py:51
+msgid "Perfect for personal, business, and influencer accounts"
+msgstr "مناسب برای حساب‌های شخصی، تجاری و اینفلوئنسرها"
+
+#: src/handlers/other_bot.py:52
+msgid "Fair prices, fast delivery, no password required!"
+msgstr "قیمت منصفانه، تحویل سریع، بدون نیاز به رمز عبور!"
+
+#: src/handlers/other_bot.py:53
+msgid "Click the button below to get started 👇"
+msgstr "برای شروع روی دکمه زیر کلیک کنید 👇"
+
+#: src/handlers/start.py:55
+msgid "Hello, welcome to Panda Bot!"
+msgstr "سلام! به ربات پاندا خوش آمدید!"
+
+#: src/handlers/start.py:56 src/handlers/start.py:72
+msgid "Send a YouTube video or playlist link:"
+msgstr "یک لینک ویدیوی یوتیوب یا پلی‌لیست ارسال کنید:"
+
+#: src/handlers/start.py:58 src/handlers/start.py:74
+msgid "Bot usage guide:"
+msgstr "راهنمای استفاده از ربات:"
+
+#: src/workers/download_link.py:21 src/workers/download_link.py:22
+msgid "Please enter a valid YouTube link."
+msgstr "لطفاً یک لینک معتبر از یوتیوب وارد کنید."
+
+#: src/workers/download_link.py:28
+msgid ""
+"The link is valid.\n"
+"\n"
+"Please wait a few moments for the video details to be displayed."
+msgstr ""
+"لینک معتبر است.\n"
+"\n"
+"لطفاً چند لحظه منتظر بمانید تا جزئیات ویدیو نمایش داده شود."
+
+#: src/workers/download_link.py:36 src/workers/download_link.py:96
+msgid "Video Title"
+msgstr "عنوان ویدیو"
+
+#: src/workers/download_link.py:36
+msgid "Please choose your preferred quality:"
+msgstr "لطفاً کیفیت مورد نظر خود را انتخاب کنید:"
+
+#: src/workers/download_link.py:74
+msgid "Download audio file with quality"
+msgstr "دانلود فایل صوتی با کیفیت"
+
+#: src/workers/download_link.py:74 src/workers/download_link.py:75
+msgid "started"
+msgstr "شروع شد"
+
+#: src/workers/download_link.py:74 src/workers/download_link.py:75
+#: src/workers/process_file_links.py:103
+msgid "Please wait..."
+msgstr "لطفاً منتظر بمانید..."
+
+#: src/workers/download_link.py:75
+msgid "Download video with quality"
+msgstr "دانلود ویدیو با کیفیت"
+
+#: src/workers/download_link.py:96 src/workers/download_playlist.py:91
+#: src/workers/process_file_links.py:123
+msgid "Download Link"
+msgstr "لینک دانلود"
+
+#: src/workers/download_link.py:96 src/workers/download_playlist.py:93
+#: src/workers/process_file_links.py:124
+msgid "This link is valid for 1 hour."
+msgstr "این لینک به مدت ۱ ساعت معتبر است."
+
+#: src/workers/download_link.py:97 src/workers/download_playlist.py:99
+#: src/workers/process_file_links.py:143 src/workers/process_file_links.py:146
+#: src/workers/process_file_links.py:149
+msgid "Please recommend our bot to your friends."
+msgstr "لطفاً ربات ما را به دوستان خود معرفی کنید."
+
+#: src/workers/download_playlist.py:21
+msgid "Please wait a moment. The playlist is being processed..."
+msgstr "لطفاً کمی صبر کنید. پلی‌لیست در حال پردازش است..."
+
+#: src/workers/download_playlist.py:30
+msgid "An error occurred while processing the playlist. Please try again."
+msgstr "در حین پردازش پلی‌لیست خطایی رخ داد. لطفاً دوباره تلاش کنید."
+
+#: src/workers/download_playlist.py:42
+msgid "Number of videos in the playlist:"
+msgstr "تعداد ویدیوها در پلی‌لیست:"
+
+#: src/workers/download_playlist.py:42
+msgid "Please choose the download quality for all videos"
+msgstr "لطفاً کیفیت دانلود برای همه ویدیوها را انتخاب کنید."
+
+#: src/workers/download_playlist.py:68 src/workers/process_file_links.py:103
+msgid "Downloading videos with quality"
+msgstr "در حال دانلود ویدیوها با کیفیت"
+
+#: src/workers/download_playlist.py:68 src/workers/process_file_links.py:103
+msgid "started."
+msgstr "شروع شد."
+
+#: src/workers/download_playlist.py:68
+msgid "Please wait.."
+msgstr "لطفاً صبر کنید.."
+
+#: src/workers/download_playlist.py:70 src/workers/process_file_links.py:105
+msgid "Downloading the next video..."
+msgstr "در حال دانلود ویدیوی بعدی..."
+
+#: src/workers/download_playlist.py:89 src/workers/process_file_links.py:122
+msgid "Video Title:"
+msgstr "عنوان ویدیو:"
+
+#: src/workers/download_playlist.py:98
+msgid "All videos in the playlist have been successfully downloaded."
+msgstr "تمام ویدیوهای موجود در پلی‌لیست با موفقیت دانلود شدند."
+
+#: src/workers/download_playlist.py:112 src/workers/process_file_links.py:137
+#: src/workers/process_file_links.py:139
+msgid "An error occurred while downloading the video. Please try again."
+msgstr "در هنگام دانلود ویدیو خطایی رخ داد. لطفاً دوباره تلاش کنید."
+
+#: src/workers/process_file_links.py:79
+msgid "Please make sure to send a file with a .txt extension."
+msgstr "لطفاً مطمئن شوید که فایلی با پسوند .txt ارسال کرده‌اید."
+
+#: src/workers/process_file_links.py:93
+msgid "No download link was found."
+msgstr "هیچ لینک دانلودی یافت نشد."
+
+#: src/workers/process_file_links.py:94
+msgid "Please resend the file with a .txt extension."
+msgstr "لطفاً فایل را با پسوند .txt دوباره ارسال کنید."
+
+#: src/workers/process_file_links.py:143 src/workers/process_file_links.py:146
+#: src/workers/process_file_links.py:148
+msgid "All download links are ready for use in download manager software."
+msgstr "تمام لینک‌های دانلود آماده استفاده در نرم‌افزارهای مدیریت دانلود هستند."
+
+#: src/workers/yt_dl.py:218
+msgid "MB"
+msgstr "مگابایت"
+
+#: src/workers/yt_dl.py:222
+msgid "GB"
+msgstr "گیگابایت"
+
+#: src/handlers/other_bot.py:26
+msgid "Enter Iranigram Bot"
+msgstr "ورود به ربات ایرانی گرام"
+
