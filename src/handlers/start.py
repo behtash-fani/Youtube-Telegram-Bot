@@ -45,13 +45,7 @@ async def cmd_start(message: types.Message):
             "⚠️ Please choose your language first.\n\n",
             reply_markup=builder.as_markup()
         )
-    else:  # If language is already set, send the welcome message in the selected language
-        # set_language(user_lang)
-        # welcome_message = f'{translate(user_lang, "Hello, welcome to Panda Bot!")}\n\n' \
-        #     f'{translate(user_lang, "Send a YouTube video or playlist link:")}\n' \
-        #     f'------------------------\n' \
-        #     f'*⚠️ {translate(user_lang, "Bot usage guide:")}*\n' \
-        #     f'/help'
+    else:
         welcome_message = f'{_("Hello, welcome to Panda Bot!")}\n\n' \
             f'{_("Send a YouTube video or playlist link:")}\n' \
             f'------------------------\n' \

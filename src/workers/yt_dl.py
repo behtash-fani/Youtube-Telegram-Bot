@@ -41,6 +41,8 @@ async def get_video_details(video_url: str) -> Dict[str, Any]:
     loop = asyncio.get_event_loop()
     info_dict = await loop.run_in_executor(None, lambda: yt_dlp.YoutubeDL(ydl_opts).extract_info(video_url, download=False))
 
+    with open('info.json', 'a') as f:
+        f.write(str(info_dict))
     video_title = info_dict.get('title', 'N/A')
     thumbnails = info_dict.get('thumbnails', [])
 
@@ -157,24 +159,17 @@ async def download_video(
         file_name = f'{title}_{video_id}.{extension}'
         full_file_path = os.path.join(download_path, file_name)
 
-        if resolution == '480p':
-            format_id = 'bestvideo[height<=480]+bestaudio/best'
-        elif resolution == '720p':
-            format_id = 'bestvideo[height<=720]+bestaudio/best'
-        elif resolution == '1080p':
-            format_id = 'bestvideo[height<=1080]+bestaudio/best'
-        else:
-            format_id = f'{format_id}+bestaudio/best'
+        # فقط فرمت‌هایی که شامل audio + video هستند و نیازی به ffmpeg ندارند
+        resolution_int = int(resolution.replace('p', '')) if resolution.endswith('p') else 720
         ydl_opts = {
-            'format': format_id,
+            'format': f'best[ext=mp4][acodec!=none][vcodec!=none][height={resolution_int}]',
             'outtmpl': full_file_path,
             'noplaylist': True,
             'quiet': False,
-            'merge_output_format': 'mp4',
-            'postprocessors': [{
-                'key': 'FFmpegVideoConvertor',
-                'preferedformat': 'mp4'
-            }]
+            'downloader': 'aria2c',
+            'downloader_args': {
+                'aria2c': ['-x', '16', '-k', '1M']
+            }
         }
 
     logging.info(f"Downloading video to {full_file_path}")
@@ -201,6 +196,95 @@ async def download_video(
         'title': video_details['title'],
         'file_path': full_file_path
     }
+
+
+# async def download_video(
+#     video_url: str,
+#     format_id: str,
+#     resolution: str,
+#     user_id: str,
+#     type: str
+# ) -> Dict[str, Union[str, bool, Dict[str, str]]]:
+#     video_details = await get_video_details(video_url)
+#     video_id = video_details['video_id']
+#     cover_url = video_details['cover_url']
+#     title = slugify(video_details['title'], allow_unicode=True)
+
+#     download_path = f'{DOWNLOAD_DIR}{user_id}'
+#     os.makedirs(download_path, exist_ok=True)
+
+#     delete_existing_files(download_path, video_id)
+
+#     if type == 'audio':
+#         extension = 'mp3'
+#         file_name = f'{title}_{video_id}.{extension}'
+#         full_file_path = os.path.join(download_path, file_name)
+#         preferred_quality = '128' if resolution == '128kbps' else '320'
+
+#         ydl_opts = {
+#             'format': 'bestaudio/best',
+#             'postprocessors': [{
+#                 'key': 'FFmpegExtractAudio',
+#                 'preferredcodec': 'mp3',
+#                 'preferredquality': preferred_quality,
+#             }],
+#             'outtmpl': (full_file_path[:-4]),
+#             'noplaylist': True,
+#             'quiet': False,
+#         }
+#     elif type == 'video':
+#         extension = 'mp4'
+#         file_name = f'{title}_{video_id}.{extension}'
+#         full_file_path = os.path.join(download_path, file_name)
+
+#         if resolution == '480p':
+#             format_id = 'bestvideo[height<=480]+bestaudio/best'
+#         elif resolution == '720p':
+#             format_id = 'bestvideo[height<=720]+bestaudio/best'
+#         elif resolution == '1080p':
+#             format_id = 'bestvideo[height<=1080]+bestaudio/best'
+#         else:
+#             format_id = f'{format_id}+bestaudio/best'
+#         ydl_opts = {
+#             'format': format_id,
+#             'outtmpl': full_file_path,
+#             'noplaylist': True,
+#             'quiet': False,
+#             'merge_output_format': 'mp4',
+#             'downloader': 'aria2c',
+#             'downloader_args': {
+#                 'aria2c': ['-x', '16', '-k', '1M']
+#             },
+#             'postprocessors': [{
+#                 'key': 'FFmpegVideoConvertor',
+#                 'preferedformat': 'mp4'
+#             }]
+#         }
+
+#     logging.info(f"Downloading video to {full_file_path}")
+
+#     loop = asyncio.get_event_loop()
+#     try:
+#         await loop.run_in_executor(None, lambda: yt_dlp.YoutubeDL(ydl_opts).download([video_url]))
+#     except Exception as e:
+#         logging.error(f"Error downloading video: {e}")
+#         return {'status': 'failed'}
+
+#     if not os.path.exists(full_file_path):
+#         logging.error(f"File {full_file_path} does not exist")
+#         return {'status': 'failed'}
+
+#     file_url = f'http://{DOMAIN}/dls/{user_id}/{file_name}'
+#     await db.add_or_update_youtube_link(user_id, video_id, video_details['title'], extension, 'downloaded', full_file_path)
+#     return {
+#         'status': 'success',
+#         'file_url': file_url,
+#         'file_name': file_name,
+#         'video_id': video_id,
+#         'cover_url': cover_url,
+#         'title': video_details['title'],
+#         'file_path': full_file_path
+#     }
 
 
 async def format_filesize(user_id, filesize: int) -> str:

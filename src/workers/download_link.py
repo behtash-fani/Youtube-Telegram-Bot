@@ -16,16 +16,10 @@ async def handle_youtube_link(message: types.Message, youtube_url: str) -> None:
     _ = get_translator(user_lang)
     try:
         if not is_valid_youtube_url(youtube_url):
-            # await message.answer(f"{translate(language, 'Please enter a valid YouTube link.')}")
             await message.answer(_("Please enter a valid YouTube link."))
             return _("Please enter a valid YouTube link.")
-        # verify_message = await message.answer(
-        #     f"✅ {translate(language, 'The link is valid.')}\n\n" \
-        #     f"{translate(language, 'Please wait a few moments for the video details to be displayed.')}"
-        #     )
-        verify_message = await message.answer(
-            _("The link is valid.\n\nPlease wait a few moments for the video details to be displayed.")
-        )
+        verify_msg = f"✅{_('The link is valid.')} \n\n ⏳ {_('Please wait a few moments for the video details to be displayed.')}" 
+        verify_message = await message.answer(verify_msg)
         video_details = await get_video_details(youtube_url)
         video_id = video_details['video_id']
         title = video_details['title']
@@ -58,7 +52,6 @@ async def handle_youtube_link(message: types.Message, youtube_url: str) -> None:
 @router.callback_query(lambda c: c.data.startswith("vid__"))
 async def process_video_callback(callback: types.CallbackQuery):
     callback_data = callback.data
-    wait_message = await callback.message.answer("⏳ _('Please wait...')")
     data_parts = callback_data.split('__')
     video_id: str = data_parts[1]
     format_id: str = data_parts[2]
@@ -66,12 +59,13 @@ async def process_video_callback(callback: types.CallbackQuery):
     user_id: int = int(data_parts[4])
     user_lang = await db.get_user_lang(user_id)
     _ = get_translator(user_lang)
+    wait_message = await callback.message.answer(f"⏳ {_('Please wait...')}")
     button_selection_message_id: int = int(data_parts[5])
     youtube_url: str = f'https://www.youtube.com/watch?v={video_id}'
     video_details = await get_video_details(youtube_url)
     title = video_details['title']
-    audio_verify_message = f"{_('Download audio file with quality')} {resolution} {_('started')}.\n{_('Please wait...')}"
-    video_verify_message = f"{_('Download video with quality')} {resolution} {_('started')}.\n{_('Please wait...')}"
+    audio_verify_message = f"📥 {_('Download audio file with quality')} {resolution} {_('started')}.\n⏳ {_('Please wait...')}"
+    video_verify_message = f"📥 {_('Download video with quality')} {resolution} {_('started')}.\n⏳ {_('Please wait...')}"
     if resolution in ['128kbps', '320kbps']:
         file_type: str = 'audio'
         verify_message = await wait_message.edit_text(audio_verify_message)
@@ -102,7 +96,7 @@ async def process_video_callback(callback: types.CallbackQuery):
             )
     else:
         await callback.message.answer(
-            translate(language, "An error occurred while downloading the file. Please try again.")
+            _("An error occurred while downloading the file. Please try again.")
         )
         await callback.message.answer_sticker(
             "CAACAgIAAxkBAAEMNZRmVILd3EPlGr5_Kebmlh0RXvCg8AACIAADJHFiGkH36EVv-c3oNQQ"

@@ -4,7 +4,6 @@ from workers import download_link, download_playlist, process_file_links
 from workers.yt_dl import is_youtube_playlist
 from workers.download_link import handle_youtube_link
 from workers.download_playlist import handle_youtube_playlist
-# from tools.translation import translate
 from workers.process_file_links import handle_file_links
 from config import API_TOKEN
 from tools.logger import logger
@@ -30,13 +29,10 @@ async def handle_links(message: types.Message):
     if message.document:
         await handle_file_links(message)
     else:
-        # if message.text == "🛒 ربات ایرانی گرام" or :
         language = await db.get_user_lang(user_id)
         youtube_url = message.text
         if 'list=WL' in youtube_url and 'watch?v=' not in youtube_url:
             await message.answer(
-                # f"{translate(language, 'The link you sent is related to WatchLater. Currently, we cannot handle videos in this link')}\n" \
-                # f"{translate(language, 'Please send a single video or playlist link')}"
                 f"{_('The link you sent is related to WatchLater. Currently, we cannot handle videos in this link')}\n" \
                 f"{_('Please send a single video or playlist link')}"
             )
@@ -44,8 +40,6 @@ async def handle_links(message: types.Message):
             await handle_youtube_link(message, youtube_url)
         elif 'list=LL' in youtube_url and 'watch?v=' not in youtube_url:
             await message.answer(
-                # f"{translate(language, 'The link you sent is related to Liked Videos. Currently, we cannot handle videos in this link')}\n" \
-                # f"{translate(language, 'Please send a single video or playlist link')}"
                 f"{_('The link you sent is related to Liked Videos. Currently, we cannot handle videos in this link')}\n" \
                 f"{_('Please send a single video or playlist link')}"
                 )

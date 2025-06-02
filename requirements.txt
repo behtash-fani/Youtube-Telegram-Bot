@@ -1,6 +1,6 @@
 aiogram==3.10.0
 python-dotenv==1.0.1
 python-slugify==8.0.4
-yt_dlp==2025.4.30
+yt_dlp==2025.5.22
 babel==2.16.0
 watchdog==6.0.0
